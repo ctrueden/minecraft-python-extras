@@ -287,7 +287,7 @@ class Perspective:
     ################## VIOLENCE ##################
 
     @synchronous()
-    def bolt(*args, **kwargs):
+    def bolt(self, *args, **kwargs):
         """
         Drops a lightning bolt in the given location of the current world.
 
@@ -299,7 +299,7 @@ class Perspective:
         return self.world().strikeLightning(self.location(r['x'], r['y'], r['z']))
 
     @synchronous()
-    def explosion(*args, **kwargs):
+    def explosion(self, *args, **kwargs):
         """
         Makes an explosion in the given location of the current world.
 
@@ -315,7 +315,7 @@ class Perspective:
         """
         Drops a lightning bolt where the linked player is currently looking.
         """
-        self.bolt(lookingat())
+        self.bolt(self.lookingat())
 
     def boom(self, power=3):
         """
@@ -323,7 +323,7 @@ class Perspective:
 
         :param power: Radius of the explosion (default 3).
         """
-        self.explosion(lookingat(), power)
+        self.explosion(self.lookingat(), power)
 
     ################## MOVEMENT ##################
 
