@@ -11,7 +11,6 @@ from java.util import ArrayList, List
 def classes(s):
     """
     Searches for class names including the given string.
-
     :param s: String fragment to match in class names.
     """
     # HACK: Obtain the list of all classes loaded by the current class loader.
@@ -83,18 +82,51 @@ def _single_match(v, clazz):
     return choice(results)
 
 def materials(s):
+    """
+    Search for matching materials.
+    :param s: String fragment that must appear in match material names.
+    """
     return _matching_fields(s, Material.getFields())
 
 def material(m):
+    """
+    Search for a matching material.
+
+    If there are multiple matches, exact matches are preferred, followed by
+    matches beginning with the given string, followed by a random match.
+
+    :param s: String fragment that must appear in matching material's name.
+    """
     return _single_match(m, Material)
 
 def entities(s):
+    """
+    Search for matching materials.
+    :param s: String fragment that must appear in matching entity names.
+    """
     return _matching_fields(s, EntityType.getFields())
 
 def entity(e):
+    """
+    Search for a matching entity.
+
+    If there are multiple matches, exact matches are preferred, followed by
+    matches beginning with the given string, followed by a random match.
+
+    :param s: String fragment that must appear in matching entity's name.
+    """
     return _single_match(e, EntityType)
 
 def pov(player=None, world=None):
+    """
+    Creates a point-of-view object around the given player or world.
+
+    Note that if you wrap a world rather than a player, some functions
+    will not work, since the POV will not have an associated position.
+
+    :param player: The player around whom to construct the point of view.
+    :param world: The world around which to construct the point of view.
+    """
     return Perspective(player, world)
 
 ################# CONTAINERS #################
@@ -113,7 +145,19 @@ def pov(player=None, world=None):
 # Other Regions are possible.
 
 class Perspective:
+    """An object encapsulating a point of view in the Minecraft universe."""
+
     def __init__(self, player=None, world=None):
+        """
+        Constructs a perspective around the given player or world.
+
+        If only a player is given, the player's current world is used for
+        world-specific commands. If only a world is given, the perspective will
+        lack specific coordinates; commands requiring a player will not work.
+
+        :param player: The player to wrap.
+        :param world: The world to wrap.
+        """
         self.player = player
         self._world = world
         self.mark_points = {}
@@ -122,9 +166,17 @@ class Perspective:
     ################# ACCESSORS ##################
 
     def world(self):
+        """
+        Gets the perspective's current world. Typically, this means the
+        world in which the perspective's linked player currently resides.
+        """
         return self._world if self._world else self.player.world
 
     def location(self, *args):
+        """
+        Gets the perspective's current location. Typically, this
+        is the location of the perspective's linked player.
+        """
         if len(args) == 0:
             return self.player.getLocation()
         if len(args) == 1:
@@ -132,14 +184,37 @@ class Perspective:
         return Location(self.world(), *args)
 
     def lookingat(self, distance=100):
+        """
+        Gets the block the linked player is currently looking at.
+
+        :param distance: The maximum distance of the looked-at block.
+        """
         return lookingat(self.player, distance)
+
+    def x(self):
+        """Gets the linked player's X coordinate."""
+        return int(round(self.player.location.x))
+
+    def y(self):
+        """Gets the linked player's Y coordinate."""
+        return int(round(self.player.location.y))
+
+    def z(self):
+        """Gets the linked player's Z coordinate."""
+        return int(round(self.player.location.z))
+
+    def pos(self):
+        """Gets the linked player's location as an [X, Y, Z] triple."""
+        return [self.x(), self.y(), self.z()]
 
     ################# GAME MODES #################
 
     def creative(self, player):
+        """Sets the linked player to creative mode."""
         self.player.gameMode = GameMode.CREATIVE
 
     def survival(self, player):
+        """Sets the linked player to survival mode."""
         self.player.gameMode = GameMode.SURVIVAL
 
     #################### TIME ####################
@@ -148,133 +223,234 @@ class Perspective:
 
     @synchronous()
     def time(self, time=None):
+        """
+        Gets or sets the time of the current world.
+
+        :param time: If passed, changes the time to the given value.
+                     There are 24000 ticks per daily cycle.
+                     Some reference points:
+                     - 0 = Morning
+                     - 6000 = Noon
+                     - 12500 = Dusk
+                     - 14000 = Night
+                     - 22500 = Dawn
+        """
         if time is None:
             return self.world().getTime()
         self.world().setTime(time)
 
     def dawn(self):
+        """Sets the time of the current world to early morning."""
         self.time(22500)
 
     def morning(self):
+        """Sets the time of the current world to morning."""
         self.time(0)
 
     def noon(self):
+        """Sets the time of the current world to midday."""
         self.time(6000)
 
     def dusk(self):
+        """Sets the time of the current world to dusk."""
         self.time(12500)
 
     def night(self):
+        """Sets the time of the current world to night."""
         self.time(14000)
 
     ################## WEATHER ###################
 
     @synchronous()
     def weather(self, raining=False, thunder=False):
+        """
+        Changes the weather of the current world.
+
+        :param raining: If true, will be raining.
+        :param thunder: If true, will be storming.
+        """
         self.world().setStorm(raining)
         self.world().setThundering(thunder)
 
     def sun(self):
+        """Sets the current world to sunny weather."""
         self.weather(raining=False, thunder=False)
 
     def rain(self):
+        """Sets the current world to rainy weather."""
         self.weather(raining=True, thunder=False)
 
     def storm(self):
+        """Sets the current world to stormy weather."""
         self.weather(raining=True, thunder=True)
 
     ################## VIOLENCE ##################
 
     @synchronous()
     def bolt(*args, **kwargs):
+        """
+        Drops a lightning bolt in the given location of the current world.
+
+        :param x: X coordinate of the lightning bolt.
+        :param y: Y coordinate of the lightning bolt.
+        :param z: Z coordinate of the lightning bolt.
+        """
         r = parseargswithpos(args, kwargs)
-        return self.world().strikeLightning(location(r['x'], r['y'], r['z']))
+        return self.world().strikeLightning(self.location(r['x'], r['y'], r['z']))
 
     @synchronous()
     def explosion(*args, **kwargs):
+        """
+        Makes an explosion in the given location of the current world.
+
+        :param power: Radius of the explosion.
+        :param x: X coordinate of the explosion.
+        :param y: Y coordinate of the explosion.
+        :param z: Z coordinate of the explosion.
+        """
         r = parseargswithpos(args, kwargs, ledger={'power':['power', 0, 8]})
         return self.world().createExplosion(r['x'], r['y'], r['z'], r['power'], True)
 
     def zap(self):
+        """
+        Drops a lightning bolt where the linked player is currently looking.
+        """
         self.bolt(lookingat())
 
     def boom(self, power=3):
+        """
+        Makes an explosion where the linked player is currently looking.
+
+        :param power: Radius of the explosion (default 3).
+        """
         self.explosion(lookingat(), power)
 
-    ################## POSITION ##################
+    ################## MOVEMENT ##################
 
     @synchronous()
     def teleport(self, *args, **kwargs):
+        """
+        Teleports the specified player (or linked player) to the given position.
+        If the player is on a different world, that world's coordinates will be
+        used -- i.e., this function won't teleport someone between worlds.
+
+        :param whom: Person to be teleported (default is the linked player).
+        :param x: X coordinate of teleport destination.
+        :param y: Y coordinate of teleport destination.
+        :param z: Z coordinate of teleport destination.
+        """
         r = parseargswithpos(args, kwargs, ledger={'whom':['whom', 0, None]})
         if not r['whom']:
             r['whom'] = self.player.getName()
         someone = player(r['whom'])
         someone.teleport(self.location(r['x'], r['y'], r['z']))
 
-    def x(self):
-        return int(round(self.player.location.x))
-
-    def y(self):
-        return int(round(self.player.location.y))
-
-    def z(self):
-        return int(round(self.player.location.z))
-
-    def pos(self):
-        return [self.x(), self.y(), self.z()]
-
-    ################## MOVEMENT ##################
-
     def up(self, amount=1):
+        """
+        Teleports the linked player upward by the given amount.
+        :param amount: Number of cubes upward to teleport.
+        """
         self.teleport(self.x(), self.y() + amount, self.z())
 
     def down(self, amount=1):
+        """
+        Teleports the linked player downward by the given amount.
+        :param amount: Number of cubes downward to teleport.
+        """
         self.teleport(self.x(), self.y() - amount, self.z())
 
     def north(self, amount=1):
+        """
+        Teleports the linked player northward by the given amount.
+        :param amount: Number of cubes northward to teleport.
+        """
         self.teleport(self.x() - amount, self.y(), self.z())
 
     def south(self, amount=1):
+        """
+        Teleports the linked player southward by the given amount.
+        :param amount: Number of cubes southward to teleport.
+        """
         self.teleport(self.x() + amount, self.y(), self.z())
 
     def east(self, amount=1):
+        """
+        Teleports the linked player eastward by the given amount.
+        :param amount: Number of cubes eastward to teleport.
+        """
         self.teleport(self.x(), self.y(), self.z() - amount)
 
     def west(self, amount=1):
+        """
+        Teleports the linked player westward by the given amount.
+        :param amount: Number of cubes westward to teleport.
+        """
         self.teleport(self.x(), self.y(), self.z() + amount)
 
     def mark(self, label=None, pos=None):
         """
-        Store the specified position with the given label.
+        Remembers the specified position with the given label.
+        :param label: The name of the point to remember.
+        :param pos: The position to remember (default current position).
         """
         self.mark_points[label] = pos if pos else self.pos()
 
     def reset(self, label=None):
         """
-        Go to the point marked with the given label.
+        Teleports to the point marked with the given label.
+        :param label: The name of the point to teleport back to.
         """
         self.teleport(self.mark_points[label])
 
     ################## CREATION ##################
 
     def spawn(self, entitytype):
+        """
+        Creates an entity of the given type where
+        the linked player is currently looking.
+
+        :param entitytype: The type of entity to spawn.
+        """
         safe_entity = entity(entitytype)
         if safe_entity is None:
             raise Exception('Unknown entity type: ' + str(entitytype))
             return
-        return self._spawn(lookingat().location, safe_entity)
+        return self._spawn(self.lookingat().location, safe_entity)
 
     @synchronous()
     def _spawn(self, location, entitytype):
         return self.world().spawnEntity(location, entitytype)
 
     def block(self, blocktype):
-        self.blocks(blocktype, 0, 0, 0)
+        """
+        Assigns a block of the given type where
+        the linked player is currently looking.
+
+        :param blocktype: The type of block to assign.
+        """
+        self.cuboid(blocktype, 0, 0, 0)
 
     def platform(self, blocktype=None, xradius=3, zradius=3):
-        self.blocks(blocktype, xradius, 0, zradius)
+        """
+        Creates a platform of the given type and specified radiuses,
+        centered where the linked player is currently looking.
 
-    def blocks(self, blocktype=None, xradius=3, yradius=3, zradius=3):
+        :param blocktype: The type of block the platform will be made of.
+        :param xradius: The platform's radius along the X axis.
+        :param zradius: The platform's radius along the Z axis.
+        """
+        self.cuboid(blocktype, xradius, 0, zradius)
+
+    def cuboid(self, blocktype=None, xradius=3, yradius=3, zradius=3):
+        """
+        Creates a cuboid of the given type and specified radiuses,
+        centered where the linked player is currently looking.
+
+        :param blocktype: The type of block the cuboid will be made of.
+        :param xradius: The cuboid's radius along the X axis.
+        :param yradius: The cuboid's radius along the Y axis.
+        :param zradius: The cuboid's radius along the Z axis.
+        """
         if blocktype is None:
             safe_blocktype = self.lookingat().type
         else:
@@ -296,6 +472,11 @@ class Perspective:
     def fill(self, pos, blocktype, srctype=None, maxdepth=20):
         """
         Flood fills an area of one block type to a different type.
+
+        :param pos:
+        :param blocktype:
+        :param srctype:
+        :param maxdepth:
         """
         if srctype is None:
             srctype = self.world().getBlockAt(pos[0], pos[1], pos[2]).type
@@ -321,10 +502,10 @@ class Perspective:
     def transform(self, blocktype=Material.AIR):
         """
         Converts what you are looking at into a block of the given material.
-        :param: blocktype The type of material your gaze shall inflict.
 
-        Examples:
-        - transform('water')
+        Example: transform('water')
+
+        :param: blocktype The type of material your gaze shall inflict.
         """
         self.lookingat().type = material(blocktype)
 
