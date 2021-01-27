@@ -1,6 +1,7 @@
 import math
 from mcapi import *
 from org.bukkit import GameMode
+from df_maze import Maze
 
 ################## SEARCHES ##################
 
@@ -508,6 +509,37 @@ class Perspective:
         :param: blocktype The type of material your gaze shall inflict.
         """
         self.lookingat().type = material(blocktype)
+
+    @synchronous()
+    def maze(self, blocktype=Material.STONE, xlen=31, zlen=31, height=3, pos=None):
+        """
+        Creates a maze of the given type and specified dimensions, with an
+        entrance at the given coordinates, and exit on the opposite diagonal.
+
+        :param blocktype: The type of block the maze will be made of.
+        :param xlen: The maze's length in X.
+        :param zlen: The maze's length in Z.
+        :param height: The maze's height (length in Y).
+        :param pos: Location of the maze's entrance. The default is
+                    one unit above where linked player is looking.
+        """
+        block_material = material(blocktype)
+        maze = Maze(int((xlen - 1) / 2), int((zlen - 1) / 2), 0, 0)
+        maze.make_maze()
+        if pos is None:
+            block = self.lookingat()
+            pos = [block.x, block.y + 1, block.z]
+        x = pos[0]
+        z = pos[2]
+        for row in str(maze).split('\n'):
+            z += 1
+            x = pos[0]
+            for c in row:
+                x += 1
+                if c == ' ': continue
+                for y in range(pos[1], pos[1] + height):
+                    self.world().getBlockAt(x, y, z).type = block_material
+
 
 
 # FIND OBJECTS
