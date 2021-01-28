@@ -536,6 +536,35 @@ class Perspective:
         loc = self.location(where, looking=True)
         self._blocks(loc, xradius, yradius, zradius, lambda x,y,z: safe_blocktype)
 
+    def ellipsoid(self, outertype, innertype=Material.AIR,
+                 xradius=7, yradius=7, zradius=7, where=None):
+        """
+        Creates an ellipsoid of the given types and specified radiuses,
+        centered at the given location.
+
+        :param outertype: The type of block the ellipsoid will have outside.
+        :param innertype: The type of block the ellipsoid will have inside.
+        :param xradius: The ellipsoid's radius along the X axis.
+        :param yradius: The ellipsoid's radius along the Y axis.
+        :param zradius: The ellipsoid's radius along the Z axis.
+        :param where: The ellipsoid's center (default lookingat()).
+        """
+        loc = self.location(where, looking=True)
+        xradsq = xradius * xradius
+        yradsq = yradius * yradius
+        zradsq = zradius * zradius
+        def blocktype_function(x, y, z):
+            xdist = abs(loc.x - x)
+            ydist = abs(loc.y - y)
+            zdist = abs(loc.z - z)
+            xdistsq = xdist * xdist
+            ydistsq = ydist * ydist
+            zdistsq = zdist * zdist
+            if xdistsq / xradsq + ydistsq / yradsq + zdistsq / zradsq <= 1:
+                return innertype
+            return None # outside the ellipsoid
+        self._blocks(loc, xradius, yradius, zradius, blocktype_function)
+
     @synchronous()
     def _blocks(self, loc, xradius, yradius, zradius, block_function):
         irange = lambda a, b: range(int(math.floor(a)), int(math.floor(b + 1)))
