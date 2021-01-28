@@ -534,15 +534,17 @@ class Perspective:
             raise Exception('Unknown material type: ' + str(blocktype))
             return
         loc = self.location(where, looking=True)
-        self._blocks(safe_blocktype, loc, xradius, yradius, zradius)
+        self._blocks(loc, xradius, yradius, zradius, lambda x,y,z: safe_blocktype)
 
     @synchronous()
-    def _blocks(self, block_material, location, xradius, yradius, zradius):
+    def _blocks(self, loc, xradius, yradius, zradius, block_function):
         irange = lambda a, b: range(int(math.floor(a)), int(math.floor(b + 1)))
-        for x in irange(location.x - xradius, location.x + xradius):
-            for y in irange(location.y - yradius, location.y + yradius):
-                for z in irange(location.z - zradius, location.z + zradius):
-                    self.world().getBlockAt(x, y, z).type = block_material
+        for x in irange(loc.x - xradius, loc.x + xradius):
+            for y in irange(loc.y - yradius, loc.y + yradius):
+                for z in irange(loc.z - zradius, loc.z + zradius):
+                    block_material = block_function(x, y, z)
+                    if block_material:
+                        self.world().getBlockAt(x, y, z).type = block_material
 
     @synchronous()
     def pour(self, blocktype, where, srctype=None, maxdepth=20):
