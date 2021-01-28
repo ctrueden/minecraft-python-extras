@@ -494,12 +494,12 @@ class Perspective:
     def _spawn(self, loc, entitytype):
         return self.world().spawnEntity(loc, entitytype)
 
-    def block(self, blocktype, where):
+    def block(self, blocktype, where=None):
         """
         Assigns a block of the given type to the specified location.
 
         :param blocktype: The type of block to assign.
-        :param where: The location to place the block.
+        :param where: The location to place the block (default lookingat()).
         """
         self.cuboid(blocktype, 0, 0, 0, where)
 
