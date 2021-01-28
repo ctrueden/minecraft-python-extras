@@ -165,11 +165,22 @@ class Perspective:
         """
         self._player = self.player(who)
         self._world = world
-        self._loc = self.location(where)
+        self._loc = None if self._player else self.location(where)
         self.mark_points = {}
         self.mark()
 
     ################# ACCESSORS ##################
+
+    def player(self, who=None):
+        """
+        Looks up the player with the given name.
+        :param who: The player to look up (default linked player).
+        """
+        if who is None:
+            return self._player if hasattr(self, '_player') else None
+        if type(who).__name__ == 'CraftPlayer':
+            return who
+        return player(who)
 
     def world(self):
         """
@@ -274,19 +285,9 @@ class Perspective:
         """
         return lookingat(self.player(who), distance)
 
-    def player(self, who=None):
-        """
-        Looks up the player with the given name.
-        :param who: The player to look up (default linked player).
-        """
-        if who is None:
-            return self._player
-        if type(who).__name__ == 'CraftPlayer':
-            return who
-        return player(who)
-
     ################# GAME MODES #################
 
+    @synchronous()
     def creative(self, who=None):
         """
         Sets the given player to creative mode.
@@ -294,6 +295,7 @@ class Perspective:
         """
         self.player(who).gameMode = GameMode.CREATIVE
 
+    @synchronous()
     def survival(self, who=None):
         """
         Sets the given player to survival mode.
@@ -392,7 +394,7 @@ class Perspective:
     ################## MOVEMENT ##################
 
     @synchronous()
-    def teleport(self, where, who=None):
+    def teleport(self, where=None, who=None):
         """
         Teleports the specified player (or linked player) to the given position.
         If the player is on a different world, that world's coordinates will be
@@ -401,6 +403,10 @@ class Perspective:
         :param where: The place to teleport (default lookingat()).
         :param who: Person to be teleported (default linked player).
         """
+        # TODO: Tweak location by +/-1 on each axis, based on current location.
+        # This would avoid being teleported inside a block and then shunted.
+        # Maybe best would be a new function nextto()? But it's tricky to
+        # decide which edge. We need air adjacent, and NOT air below!
         loc = self.location(where, looking=True)
         self.player(who).teleport(loc)
 
