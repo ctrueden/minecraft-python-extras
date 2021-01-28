@@ -573,17 +573,6 @@ class Perspective:
         self._fill([loc.x, loc.y-1, loc.z], blocktype, srctype, depth+1, maxdepth)
 
     @synchronous()
-    def transform(self, blocktype=Material.AIR):
-        """
-        Converts what you are looking at into a block of the given material.
-
-        Example: transform('water')
-
-        :param: blocktype The type of material your gaze shall inflict.
-        """
-        self.lookingat().type = material(blocktype)
-
-    @synchronous()
     def maze(self, blocktype=Material.STONE, xlen=31, zlen=31, height=3, where=None):
         """
         Creates a maze of the given type and specified dimensions, with an
