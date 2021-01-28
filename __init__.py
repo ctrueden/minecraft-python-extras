@@ -518,7 +518,7 @@ class Perspective:
     def cuboid(self, blocktype=None, xradius=3, yradius=3, zradius=3, where=None):
         """
         Creates a cuboid of the given type and specified radiuses,
-        centered where the linked player is currently looking.
+        centered at the given location.
 
         :param blocktype: The type of block the cuboid will be made of.
         :param xradius: The cuboid's radius along the X axis.
