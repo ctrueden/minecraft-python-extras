@@ -120,18 +120,18 @@ def entity(e):
 
 ################ ENTRY POINT #################
 
-def pov(player=None, world=None, place=None):
+def pov(who=None, world=None, where=None):
     """
     Creates a point-of-view object around the given player or world.
 
     Note that if you wrap a world rather than a player, some functions
     will not work, since the POV will not have an associated position.
 
-    :param player: The player around whom to construct the point of view.
+    :param who: The player around whom to construct the point of view.
     :param world: The world around which to construct the point of view.
-    :param place: The location around which to construct the point of view.
+    :param where: The location around which to construct the point of view.
     """
-    return Perspective(player, world, place)
+    return Perspective(who, world, where)
 
 ################# CONTAINERS #################
 
@@ -151,7 +151,7 @@ def pov(player=None, world=None, place=None):
 class Perspective:
     """An object encapsulating a point of view in the Minecraft universe."""
 
-    def __init__(self, player=None, world=None, place=None):
+    def __init__(self, who=None, world=None, where=None):
         """
         Constructs a perspective around the given player, or world & location.
 
@@ -159,13 +159,13 @@ class Perspective:
         used for world-specific commands. Alternately, if a world and location
         are given, the perspective will be fixed at that point.
 
-        :param player: The player to wrap.
+        :param who: The player to wrap.
         :param world: The world to wrap.
-        :param place: Location to wrap.
+        :param where: Location to wrap.
         """
-        self._player = player
+        self._player = self.player(who)
         self._world = world
-        self._loc = self.location(place)
+        self._loc = self.location(where)
         self.mark_points = {}
         self.mark()
 
@@ -178,98 +178,106 @@ class Perspective:
         """
         return self._world if self._world else self.player().world
 
-    def location(self, thing=None):
+    def location(self, where=None, looking=False):
         """
-        Gets a thing's coordinates as a Location object.
-        :param thing: An Entity, Location, or position (default linked location).
+        Gets a place's coordinates as a Location object.
+        :param where: The place or thing to wrap into a Location.
+                      Can be an Entity, a Location, or a position.
+                      Default is the perspective's linked location,
+                      or the lookingat() location if looking=True.
+        :param looking: If true, changes the default from the linked
+                        location to the lookingat() location.
         """
-        if thing is None:
-            if hasattr(self, '_loc') and self._loc:
-                thing = self._loc
+        if where is None:
+            if looking:
+                where = self.lookingat()
+            elif hasattr(self, '_loc') and self._loc:
+                where = self._loc
             else:
-                thing = self.player()
-        if thing is None:
+                where = self.player()
+        if where is None:
             raise 'Perspective has no linked location'
-        if isinstance(thing, Location):
-            return thing
-        if hasattr(thing, 'getLocation'):
-            return thing.getLocation()
-        if len(thing) == 3:
-            return Location(self.world(), thing[0], thing[1], thing[2])
-        raise 'Unknown kind of thing: ' + str(type(thing))
+        if isinstance(where, Location):
+            return where
+        if hasattr(where, 'getLocation'):
+            return where.getLocation()
+        if len(where) == 3:
+            return Location(self.world(), where[0], where[1], where[2])
+        raise 'Unknown place type: ' + str(type(where))
 
-    def fpos(self, thing=None):
+    def fpos(self, where=None):
         """
-        Gets a thing's coordinates as an [X, Y, Z] position triple
+        Gets a place's coordinates as an [X, Y, Z] position triple
         of floating point values.
 
-        :param thing: An Entity, Location, or position (default linked location).
+        :param where: Place whose coordinates are desired (default linked location).
         """
         return [loc.x, loc.y, loc.z]
 
-    def ipos(self, thing=None):
+    def ipos(self, place=None):
         """
-        Gets a thing's coordinates as an [X, Y, Z] position triple
+        Gets a place's coordinates as an [X, Y, Z] position triple
         of floating point values.
 
-        :param thing: An Entity, Location, or position (default linked location).
+        :param where: Place whose coordinates are needed (default linked location).
         """
-        loc = self.location(thing)
-        return [int(round(loc.x)), int(round(loc.y)), int(round(loc.z))]
+        loc = self.location(where)
+        return [ix(loc), iy(loc), iz(loc)]
 
-    def fx(self, thing=None):
+    def fx(self, where=None):
         """
-        Gets a location's X coordinate as a float.
-        :param thing: An Entity, Location, or position (default linked location).
+        Gets a place's X coordinate as a float.
+        :param where Place whose X coordinate is needed (default current location).
         """
-        return self.location(thing).x
+        return self.location(where).x
 
-    def fy(self, thing=None):
+    def fy(self, where=None):
         """
-        Gets a location's Y coordinate as a float.
-        :param loc Location to convert (default current location).
+        Gets a place's Y coordinate as a float.
+        :param where Place whose Y coordinate is needed (default current location).
         """
-        return self.location(thing).y
+        return self.location(where).y
 
-    def fz(self, thing=None):
+    def fz(self, where=None):
         """
-        Gets a location's Z coordinate as a float.
-        :param loc Location to convert (default current location).
+        Gets a place's Z coordinate as a float.
+        :param where Place whose Z coordinate is needed (default current location).
         """
-        return self.location(thing).z
+        return self.location(where).z
 
-    def ix(self, thing=None):
+    def ix(self, where=None):
         """
-        Gets a location's X coordinate as an integer.
-        :param loc Location to convert (default current location).
+        Gets a place's X coordinate as an integer.
+        :param where Place whose X coordinate is needed (default current location).
         """
         return int(round(self.fx(loc)))
 
-    def iy(self, thing=None):
+    def iy(self, where=None):
         """
-        Gets a location's Y coordinate as an integer.
+        Gets a place's Y coordinate as an integer.
         :param loc Location to convert (default current location).
         """
         return int(round(self.fy(loc)))
 
-    def iz(self, thing=None):
+    def iz(self, where=None):
         """
-        Gets a location's Z coordinate as an integer.
+        Gets a place's Z coordinate as an integer.
         :param loc Location to convert (default current location).
         """
         return int(round(self.fz(loc)))
 
-    def lookingat(self, distance=100):
+    def lookingat(self, who=None, distance=100):
         """
-        Gets the block the linked player is currently looking at.
+        Gets the block the given player is currently looking at.
+        :param who: The player whose gaze will be analyzed (default linked player).
         :param distance: The maximum distance of the looked-at block.
         """
-        return lookingat(self.player(), distance)
+        return lookingat(self.player(who), distance)
 
     def player(self, who=None):
         """
         Looks up the player with the given name.
-        :param who: Name of player to look up (default linked player).
+        :param who: The player to look up (default linked player).
         """
         if who is None:
             return self._player
@@ -279,13 +287,19 @@ class Perspective:
 
     ################# GAME MODES #################
 
-    def creative(self, player):
-        """Sets the linked player to creative mode."""
-        self.player().gameMode = GameMode.CREATIVE
+    def creative(self, who=None):
+        """
+        Sets the given player to creative mode.
+        :param who: The player to set to creative mode (default linked player).
+        """
+        self.player(who).gameMode = GameMode.CREATIVE
 
-    def survival(self, player):
-        """Sets the linked player to survival mode."""
-        self.player().gameMode = GameMode.SURVIVAL
+    def survival(self, who=None):
+        """
+        Sets the given player to survival mode.
+        :param who: The player to set to creative mode (default linked player).
+        """
+        self.player(who).gameMode = GameMode.SURVIVAL
 
     #################### TIME ####################
 
@@ -356,128 +370,134 @@ class Perspective:
     ################## VIOLENCE ##################
 
     @synchronous()
-    def zap(self, place=None):
+    def zap(self, where=None):
         """
         Drops a lightning bolt.
-        :param place: Where to drop the lightning bolt (default lookingat()).
+        :param where: The place to drop the lightning bolt (default lookingat()).
         """
-        loc = self.location(place) if place else self.lookingat().location
+        loc = self.location(where, looking=True)
         return self.world().strikeLightning(loc)
 
     @synchronous()
-    def boom(self, power=3, place=None):
+    def boom(self, power=3, where=None):
         """
         Makes an explosion.
 
         :param power: Radius of the explosion (default 3).
-        :param place: Where to explode (default lookingat()).
+        :param where: The place to explode (default lookingat()).
         """
-        loc = self.location(place) if place else self.lookingat().location
-        return self.world().createExplosion(loc.x, loc.y, loc.z, power, True)
+        loc = self.location(where, looking=True)
+        return self.world().createExplosion(loc, power, True)
 
     ################## MOVEMENT ##################
 
     @synchronous()
-    def teleport(self, x, y, z, who=None):
+    def teleport(self, where, who=None):
         """
         Teleports the specified player (or linked player) to the given position.
         If the player is on a different world, that world's coordinates will be
         used -- i.e., this function won't teleport someone between worlds.
 
-        :param x: X coordinate of teleport destination.
-        :param y: Y coordinate of teleport destination.
-        :param z: Z coordinate of teleport destination.
+        :param where: The place to teleport (default lookingat()).
         :param who: Person to be teleported (default linked player).
         """
-        safe_player = _safe_player(who)
-        someone.teleport(self.location(r['x'], r['y'], r['z']))
+        loc = self.location(where, looking=True)
+        self.player(who).teleport(loc)
 
-    def up(self, amount=1):
+    def up(self, amount=1, who=None):
         """
         Teleports the linked player upward by the given amount.
         :param amount: Number of cubes upward to teleport.
+        :param who: Person to be teleported (default linked player).
         """
-        self.teleport(self.x(), self.y() + amount, self.z())
+        self.teleport([self.fx(), self.fy() + amount, self.fz()], who)
 
-    def down(self, amount=1):
+    def down(self, amount=1, who=None):
         """
         Teleports the linked player downward by the given amount.
         :param amount: Number of cubes downward to teleport.
+        :param who: Person to be teleported (default linked player).
         """
-        self.teleport(self.x(), self.y() - amount, self.z())
+        self.teleport([self.fx(), self.fy() - amount, self.fz()], who)
 
-    def north(self, amount=1):
+    def north(self, amount=1, who=None):
         """
         Teleports the linked player northward by the given amount.
         :param amount: Number of cubes northward to teleport.
+        :param who: Person to be teleported (default linked player).
         """
-        self.teleport(self.x() - amount, self.y(), self.z())
+        self.teleport([self.fx() - amount, self.fy(), self.fz()], who)
 
     def south(self, amount=1):
         """
         Teleports the linked player southward by the given amount.
         :param amount: Number of cubes southward to teleport.
+        :param who: Person to be teleported (default linked player).
         """
-        self.teleport(self.x() + amount, self.y(), self.z())
+        self.teleport([self.fx() + amount, self.fy(), self.fz()], who)
 
     def east(self, amount=1):
         """
         Teleports the linked player eastward by the given amount.
         :param amount: Number of cubes eastward to teleport.
+        :param who: Person to be teleported (default linked player).
         """
-        self.teleport(self.x(), self.y(), self.z() - amount)
+        self.teleport([self.fx(), self.fy(), self.fz() - amount], who)
 
     def west(self, amount=1):
         """
         Teleports the linked player westward by the given amount.
         :param amount: Number of cubes westward to teleport.
+        :param who: Person to be teleported (default linked player).
         """
-        self.teleport(self.x(), self.y(), self.z() + amount)
+        self.teleport([self.fx(), self.fy(), self.fz() + amount], who)
 
-    def mark(self, label=None, place=None):
+    def mark(self, label=None, where=None):
         """
         Remembers the specified position with the given label.
         :param label: The name of the point to remember.
-        :param place: The location to remember (default linked location).
+        :param where: The place to remember (default linked location).
         """
-        self.mark_points[label] = self.location(place)
+        self.mark_points[label] = where
 
-    def reset(self, label=None):
+    def reset(self, label=None, who=None):
         """
-        Teleports linked player to the point marked with the given label.
+        Teleports the given player to the point marked with the given label.
         :param label: The name of the point to teleport back to.
+        :param who: Person to be teleported (default linked player).
         """
-        self.teleport(self.mark_points[label])
+        self.teleport(self.mark_points[label], who)
 
     ################## CREATION ##################
 
-    def spawn(self, entitytype):
+    def spawn(self, entitytype, where=None):
         """
         Creates an entity of the given type where
         the linked player is currently looking.
 
         :param entitytype: The type of entity to spawn.
+        :param where: The place to spawn the entity (default lookingat()).
         """
         safe_entity = entity(entitytype)
         if safe_entity is None:
             raise Exception('Unknown entity type: ' + str(entitytype))
             return
-        return self._spawn(self.lookingat().location, safe_entity)
+        return self._spawn(self.location(where), safe_entity)
 
     @synchronous()
     def _spawn(self, loc, entitytype):
         return self.world().spawnEntity(loc, entitytype)
 
-    def block(self, blocktype, loc):
+    def block(self, blocktype, where):
         """
         Assigns a block of the given type to the specified location.
 
         :param blocktype: The type of block to assign.
-        :param loc: The location to place the block.
+        :param where: The location to place the block.
         """
-        self.cuboid(blocktype, 0, 0, 0, loc)
+        self.cuboid(blocktype, 0, 0, 0, where)
 
-    def platform(self, blocktype=None, xradius=3, zradius=3, place=None):
+    def platform(self, blocktype=None, xradius=3, zradius=3, where=None):
         """
         Creates a platform of the given type and specified radiuses,
         centered where the linked player is currently looking.
@@ -485,11 +505,11 @@ class Perspective:
         :param blocktype: The type of block the platform will be made of.
         :param xradius: The platform's radius along the X axis.
         :param zradius: The platform's radius along the Z axis.
-        :param place: Where to put the platform's center (default lookingat()).
+        :param where: The platform's center (default lookingat()).
         """
-        self.cuboid(blocktype, xradius, 0, zradius, place)
+        self.cuboid(blocktype, xradius, 0, zradius, where)
 
-    def cuboid(self, blocktype=None, xradius=3, yradius=3, zradius=3, place=None):
+    def cuboid(self, blocktype=None, xradius=3, yradius=3, zradius=3, where=None):
         """
         Creates a cuboid of the given type and specified radiuses,
         centered where the linked player is currently looking.
@@ -498,7 +518,7 @@ class Perspective:
         :param xradius: The cuboid's radius along the X axis.
         :param yradius: The cuboid's radius along the Y axis.
         :param zradius: The cuboid's radius along the Z axis.
-        :param place: Where to put the cuboid's center (default lookingat()).
+        :param where: The cuboid's center (default lookingat()).
         """
         if blocktype is None:
             safe_blocktype = self.lookingat().type
@@ -507,7 +527,7 @@ class Perspective:
         if safe_blocktype is None:
             raise Exception('Unknown material type: ' + str(blocktype))
             return
-        loc = self.location(place) if place else self.lookingat().location
+        loc = self.location(where, looking=True)
         self._blocks(safe_blocktype, loc, xradius, yradius, zradius)
 
     @synchronous()
@@ -519,16 +539,16 @@ class Perspective:
                     self.world().getBlockAt(x, y, z).type = block_material
 
     @synchronous()
-    def pour(self, blocktype, place, srctype=None, maxdepth=20):
+    def pour(self, blocktype, where, srctype=None, maxdepth=20):
         """
         Flood fills an area of one block type to a different type.
 
         :param blocktype:
-        :param place:
+        :param where:
         :param srctype:
         :param maxdepth:
         """
-        loc = self.location(place) if place else self.lookingat().location
+        loc = self.location(where, looking=True)
         if srctype is None:
             srctype = self.world().getBlockAt(loc).type
         _fill(material(blocktype), loc, material(srctype), 0, maxdepth)
@@ -558,7 +578,7 @@ class Perspective:
         self.lookingat().type = material(blocktype)
 
     @synchronous()
-    def maze(self, blocktype=Material.STONE, xlen=31, zlen=31, height=3, place=None):
+    def maze(self, blocktype=Material.STONE, xlen=31, zlen=31, height=3, where=None):
         """
         Creates a maze of the given type and specified dimensions, with an
         entrance at the given coordinates, and exit on the opposite diagonal.
@@ -567,19 +587,19 @@ class Perspective:
         :param xlen: The maze's length in X.
         :param zlen: The maze's length in Z.
         :param height: The maze's height (length in Y).
-        :param place: Where to put the maze's entrance.
+        :param where: The maze's entrance corner.
                       Default is one unit above lookingat().
         """
         block_material = material(blocktype)
         maze = Maze(int((xlen - 1) / 2), int((zlen - 1) / 2), 0, 0)
         maze.make_maze()
-        if place is None:
+        if where is None:
             look = self.lookingat()
             px, py, pz = look.x, look.y + 1, look.z
         else:
-            px = self.ix(place)
-            py = self.iy(place)
-            pz = self.iz(place)
+            px = self.ix(where)
+            py = self.iy(where)
+            pz = self.iz(where)
         x, z = px, pz
         for row in str(maze).split('\n'):
             z += 1
@@ -589,8 +609,6 @@ class Perspective:
                 if c == ' ': continue
                 for y in range(py, py + height):
                     self.world().getBlockAt(x, y, z).type = block_material
-
-
 
 # FIND OBJECTS
 #def findblock(pos, blocktype, maxradiusx=50, maxradiusy=50, maxradiusz=50):
