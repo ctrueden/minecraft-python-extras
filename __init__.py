@@ -636,6 +636,34 @@ class Perspective:
                 for y in range(py, py + height):
                     self.world().getBlockAt(x, y, z).type = block_material
 
+    ############### MISCELLANEOUS ################
+
+    def compasstarget(self, where):
+        """
+        Points the linked player's compass to the specified place.
+        :param where: Place or player where linked player's compass will point.
+        """
+        who = self.player(where)
+        if who:
+            # Continuously update compass to point to that player.
+            self._compass_updater = CompassUpdater(self.player(), who)
+            self._compass_updater.runTaskTimer(PLUGIN, 0, 100);
+        else:
+            # Stop continuous update thread.
+            if self._compass_updater:
+                self._compass_updater.cancel()
+                self._compass_updater = None
+            self.player().setCompassTarget(self.location(where))
+
+class CompassUpdater(BukkitRunnable):
+    def __init__(self, player, target):
+        self.player = player
+        self.target = target
+    def run(self):
+        self.player.setCompassTarget(self.target.location)
+
+
+
 # FIND OBJECTS
 #def findblock(pos, blocktype, maxradiusx=50, maxradiusy=50, maxradiusz=50):
 #    """
