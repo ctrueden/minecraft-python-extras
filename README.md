@@ -34,5 +34,6 @@ Extra functions for
 4. In the Jython interpreter, try:
    ```
    from extras import *
-   dusk()
+   me = pov('myplayername')
+   help(me)
    ```
