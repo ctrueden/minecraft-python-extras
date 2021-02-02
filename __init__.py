@@ -1,7 +1,11 @@
 import math
 from mcapi import *
-from org.bukkit import GameMode
 from df_maze import Maze
+
+from java.awt.image import BufferedImage
+from java.net import URL
+from javax.imageio import ImageIO
+from org.bukkit import GameMode
 
 ################## SEARCHES ##################
 
@@ -117,6 +121,174 @@ def entity(e):
     :param s: String fragment that must appear in matching entity's name.
     """
     return _single_match(e, EntityType)
+
+################### COLORS ###################
+
+color_values = [
+    [  0,   0,   0], # black
+    [  0,   0, 255], # blue
+    [160,  48,  48], # brown
+    [  0, 255, 255], # cyan
+    [128, 128, 128], # gray
+    [  0,   0, 255], # green
+    [128, 128, 255], # light blue
+    [192, 192, 192], # light gray
+    [128, 255, 128], # lime
+    [255,   0, 255], # magenta
+    [255, 128,   0], # orange
+    [255, 192, 192], # pink
+    [128,   0, 128], # purple
+    [255,   0,   0], # red
+    [255, 255, 255], # white
+    [255, 255,   0]  # yellow
+]
+
+color_materials = {
+    'concrete': [
+        Material.BLACK_CONCRETE,
+        Material.BLUE_CONCRETE,
+        Material.BROWN_CONCRETE,
+        Material.CYAN_CONCRETE,
+        Material.GRAY_CONCRETE,
+        Material.GREEN_CONCRETE,
+        Material.LIGHT_BLUE_CONCRETE,
+        Material.LIGHT_GRAY_CONCRETE,
+        Material.LIME_CONCRETE,
+        Material.MAGENTA_CONCRETE,
+        Material.ORANGE_CONCRETE,
+        Material.PINK_CONCRETE,
+        Material.PURPLE_CONCRETE,
+        Material.RED_CONCRETE,
+        Material.WHITE_CONCRETE,
+        Material.YELLOW_CONCRETE
+    ],
+    'glass': [
+        Material.BLACK_STAINED_GLASS,
+        Material.BLUE_STAINED_GLASS,
+        Material.BROWN_STAINED_GLASS,
+        Material.CYAN_STAINED_GLASS,
+        Material.GRAY_STAINED_GLASS,
+        Material.GREEN_STAINED_GLASS,
+        Material.LIGHT_BLUE_STAINED_GLASS,
+        Material.LIGHT_GRAY_STAINED_GLASS,
+        Material.LIME_STAINED_GLASS,
+        Material.MAGENTA_STAINED_GLASS,
+        Material.ORANGE_STAINED_GLASS,
+        Material.PINK_STAINED_GLASS,
+        Material.PURPLE_STAINED_GLASS,
+        Material.RED_STAINED_GLASS,
+        Material.WHITE_STAINED_GLASS,
+        Material.YELLOW_STAINED_GLASS
+    ],
+    'glazed': [
+        Material.BLACK_GLAZED_TERRACOTTA,
+        Material.BLUE_GLAZED_TERRACOTTA,
+        Material.BROWN_GLAZED_TERRACOTTA,
+        Material.CYAN_GLAZED_TERRACOTTA,
+        Material.GRAY_GLAZED_TERRACOTTA,
+        Material.GREEN_GLAZED_TERRACOTTA,
+        Material.LIGHT_BLUE_GLAZED_TERRACOTTA,
+        Material.LIGHT_GRAY_GLAZED_TERRACOTTA,
+        Material.LIME_GLAZED_TERRACOTTA,
+        Material.MAGENTA_GLAZED_TERRACOTTA,
+        Material.ORANGE_GLAZED_TERRACOTTA,
+        Material.PINK_GLAZED_TERRACOTTA,
+        Material.PURPLE_GLAZED_TERRACOTTA,
+        Material.RED_GLAZED_TERRACOTTA,
+        Material.WHITE_GLAZED_TERRACOTTA,
+        Material.YELLOW_GLAZED_TERRACOTTA
+    ],
+    'pane': [
+        Material.BLACK_STAINED_GLASS_PANE,
+        Material.BLUE_STAINED_GLASS_PANE,
+        Material.BROWN_STAINED_GLASS_PANE,
+        Material.CYAN_STAINED_GLASS_PANE,
+        Material.GRAY_STAINED_GLASS_PANE,
+        Material.GREEN_STAINED_GLASS_PANE,
+        Material.LIGHT_BLUE_STAINED_GLASS_PANE,
+        Material.LIGHT_GRAY_STAINED_GLASS_PANE,
+        Material.LIME_STAINED_GLASS_PANE,
+        Material.MAGENTA_STAINED_GLASS_PANE,
+        Material.ORANGE_STAINED_GLASS_PANE,
+        Material.PINK_STAINED_GLASS_PANE,
+        Material.PURPLE_STAINED_GLASS_PANE,
+        Material.RED_STAINED_GLASS_PANE,
+        Material.WHITE_STAINED_GLASS_PANE,
+        Material.YELLOW_STAINED_GLASS_PANE
+    ],
+    'powder': [
+        Material.BLACK_CONCRETE_POWDER,
+        Material.BLUE_CONCRETE_POWDER,
+        Material.BROWN_CONCRETE_POWDER,
+        Material.CYAN_CONCRETE_POWDER,
+        Material.GRAY_CONCRETE_POWDER,
+        Material.GREEN_CONCRETE_POWDER,
+        Material.LIGHT_BLUE_CONCRETE_POWDER,
+        Material.LIGHT_GRAY_CONCRETE_POWDER,
+        Material.LIME_CONCRETE_POWDER,
+        Material.MAGENTA_CONCRETE_POWDER,
+        Material.ORANGE_CONCRETE_POWDER,
+        Material.PINK_CONCRETE_POWDER,
+        Material.PURPLE_CONCRETE_POWDER,
+        Material.RED_CONCRETE_POWDER,
+        Material.WHITE_CONCRETE_POWDER,
+        Material.YELLOW_CONCRETE_POWDER],
+    'terracotta': [
+        Material.BLACK_TERRACOTTA,
+        Material.BLUE_TERRACOTTA,
+        Material.BROWN_TERRACOTTA,
+        Material.CYAN_TERRACOTTA,
+        Material.GRAY_TERRACOTTA,
+        Material.GREEN_TERRACOTTA,
+        Material.LIGHT_BLUE_TERRACOTTA,
+        Material.LIGHT_GRAY_TERRACOTTA,
+        Material.LIME_TERRACOTTA,
+        Material.MAGENTA_TERRACOTTA,
+        Material.ORANGE_TERRACOTTA,
+        Material.PINK_TERRACOTTA,
+        Material.PURPLE_TERRACOTTA,
+        Material.RED_TERRACOTTA,
+        Material.WHITE_TERRACOTTA,
+        Material.YELLOW_TERRACOTTA
+    ],
+    'wool': [
+        Material.BLACK_WOOL,
+        Material.BLUE_WOOL,
+        Material.BROWN_WOOL,
+        Material.CYAN_WOOL,
+        Material.GRAY_WOOL,
+        Material.GREEN_WOOL,
+        Material.LIGHT_BLUE_WOOL,
+        Material.LIGHT_GRAY_WOOL,
+        Material.LIME_WOOL,
+        Material.MAGENTA_WOOL,
+        Material.ORANGE_WOOL,
+        Material.PINK_WOOL,
+        Material.PURPLE_WOOL,
+        Material.RED_WOOL,
+        Material.WHITE_WOOL,
+        Material.YELLOW_WOOL
+    ]
+}
+
+def colortable(name):
+    return dict(zip(color_materials[name], color_values))
+
+def _color_distance(rgb, r, g, b):
+    rdist = abs(rgb[0] - r)
+    gdist = abs(rgb[1] - g)
+    bdist = abs(rgb[2] - b)
+    return rdist ** 2 + gdist ** 2 + bdist ** 2
+
+def _closest_material(materials, r, g, b):
+    best_material = None
+    best_distance = float('inf')
+    for material, rgb in materials.items():
+        dist = _color_distance(rgb, r, g, b)
+        if dist < best_distance:
+            best_distance = dist
+            best_material = material
+    return best_material
 
 ################ ENTRY POINT #################
 
@@ -564,6 +736,36 @@ class Perspective:
                 return innertype
             return None # outside the ellipsoid
         self._blocks(loc, xradius, yradius, zradius, blocktype_function)
+
+    def image(self, colortable, image, where=None):
+        """
+        Draws an image from the given source, using materials from the
+        given color table to approximate the color of each image pixel.
+
+        :param colortable: Dictionary mapping material types to color RGB triples.
+        :param image: The image to draw.
+        :param where: The image's center (default lookingat()).
+        """
+        loc = self.location(where, looking=True)
+        if not isinstance(image, BufferedImage):
+            image = ImageIO.read(image)
+        xoff = loc.x - image.width / 2
+        yoff = loc.y - image.height / 2
+        def blocktype_function(x, y, z):
+            ix = int(x - xoff)
+            iy = image.height - int(y - yoff) # flip vertically
+            if ix < 0 or iy < 0 or ix >= image.width or iy >= image.height:
+                return None
+            argb = image.getRGB(ix, iy)
+            a = 0xff & (argb >> 24)
+            r = 0xff & (argb >> 16)
+            g = 0xff & (argb >> 8)
+            b = 0xff & argb
+            if a < 64:
+                return Material.AIR # TEMP
+            return _closest_material(colortable, r, g, b)
+        # TODO: Make orientation (e.g. XZ vs. XY vs. YZ) configurable.
+        self._blocks(loc, image.width / 2, image.height / 2, 0, blocktype_function)
 
     @synchronous()
     def _blocks(self, loc, xradius, yradius, zradius, block_function):
