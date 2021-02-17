@@ -637,7 +637,7 @@ class Perspective:
         :param label: The name of the point to remember.
         :param where: The place to remember (default linked location).
         """
-        self.mark_points[label] = where
+        self.mark_points[label] = where or self.location()
 
     def reset(self, label=None, who=None):
         """
