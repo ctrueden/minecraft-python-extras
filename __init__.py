@@ -1,4 +1,4 @@
-import math
+import collections, math
 from mcapi import *
 from df_maze import Maze
 
@@ -6,6 +6,38 @@ from java.awt.image import BufferedImage
 from java.net import URL
 from javax.imageio import ImageIO
 from org.bukkit import GameMode
+
+############## BLOCK ITERATION ###############
+
+def airy(block):
+    type = block.type
+    return type == Material.AIR or \
+           type == Material.CAVE_AIR or \
+           type == Material.VOID_AIR or \
+           type == Material.WATER
+
+class LocationQueue:
+    def __init__(self, origin, limit):
+        self.origin = origin
+        self.limit = limit
+        self.visited = {}
+        self.pending = collections.deque()
+        self.push(origin.x, origin.y, origin.z)
+
+    def push(self, x, y, z):
+        p = (x, y, z)
+        dist = abs(self.origin.x - x) + \
+               abs(self.origin.y - y) + \
+               abs(self.origin.z - z)
+        if dist <= self.limit and not p in self.visited:
+            self.visited[p] = True
+            self.pending.append(p)
+
+    def pop(self):
+        return self.pending.popleft()
+
+    def __nonzero__(self):
+        return bool(self.pending)
 
 ################## SEARCHES ##################
 
@@ -666,6 +698,36 @@ class Perspective:
     @synchronous()
     def _spawn(self, loc, entitytype):
         return self.world().spawnEntity(loc, entitytype)
+
+    def lettherebelight(self, where=None, limit=50, blocktype=Material.GLOWSTONE, minlight=7):
+        """
+        Fills up dark nooks with the given block type.
+        """
+        origin = self.location(where)
+        if not airy(origin.block):
+            return
+        queue = LocationQueue(origin, limit)
+        while queue:
+            loc = self.location(queue.pop())
+            if not airy(loc.block):
+                continue
+            n = self.location([loc.x-1, loc.y, loc.z]).block
+            s = self.location([loc.x+1, loc.y, loc.z]).block
+            e = self.location([loc.x, loc.y, loc.z-1]).block
+            w = self.location([loc.x, loc.y, loc.z+1]).block
+            u = self.location([loc.x, loc.y+1, loc.z]).block
+            d = self.location([loc.x, loc.y-1, loc.z]).block
+            queue.push(n.x, n.y, n.z)
+            queue.push(s.x, s.y, s.z)
+            queue.push(e.x, e.y, e.z)
+            queue.push(w.x, w.y, w.z)
+            queue.push(u.x, u.y, u.z)
+            queue.push(d.x, d.y, d.z)
+            if loc.block.lightLevel >= minlight:
+                continue
+            airs = [airy(n), airy(s), airy(e), airy(w), airy(u), airy(d)].count(True)
+            if airs <= 3:
+                self.block(blocktype, loc)
 
     def block(self, blocktype, where=None):
         """
