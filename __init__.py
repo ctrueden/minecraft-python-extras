@@ -395,12 +395,13 @@ class Perspective:
 
         :param where: Place whose coordinates are desired (default linked location).
         """
+        loc = self.location(where)
         return [loc.x, loc.y, loc.z]
 
-    def ipos(self, place=None):
+    def ipos(self, where=None):
         """
         Gets a place's coordinates as an [X, Y, Z] position triple
-        of floating point values.
+        of integer values.
 
         :param where: Place whose coordinates are needed (default linked location).
         """
