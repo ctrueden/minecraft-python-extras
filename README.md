@@ -14,7 +14,7 @@ Extra functions for
    ```
    mkdir python
    cd python
-   git clone git://github.com/ctrueden/minecraft-python-extras extras
+   git clone git://github.com/ctrueden/minecraft-python-extras mcx
    ```
 
 
@@ -33,7 +33,7 @@ Extra functions for
 
 4. In the Jython interpreter, try:
    ```
-   from extras import *
-   me = pov('myplayername')
+   import mcx
+   me = mcx.pov('myplayername')
    help(me)
    ```
