@@ -800,7 +800,8 @@ class Perspective:
             return None # outside the ellipsoid
         self._blocks(loc, xradius, yradius, zradius, blocktype_function)
 
-    def image(self, colortable, image, where=None):
+    @synchronous()
+    def image(self, colortable, image, where=None, wstep=(1, 0, 0), hstep=(0, -1, 0)):
         """
         Draws an image from the given source, using materials from the
         given color table to approximate the color of each image pixel.
@@ -808,27 +809,47 @@ class Perspective:
         :param colortable: Dictionary mapping material types to color RGB triples.
         :param image: The image to draw.
         :param where: The image's center (default lookingat()).
+        :param wstep: (X, Y, Z) tuple defining how each dimensional axis
+                      moves along the image's X/width axis. The default
+                      is (1, 0, 0), which maps the image X axis to
+                      Minecraft's X axis in the positive direction.
+        :param hstep: (X, Y, Z) tuple defining how each dimensional axis
+                      moves along the image's Y/height axis. The default
+                      is (0, -1, 0), which maps the image Y axis to
+                      Minecraft's Y axis in the negative direction
+                      (so that the image appears right-side up).
+
+        Example:
+
+          from java.net import URL
+          url = URL('https://pixelarticons.com/static/3c32cbcff1a695d60899acaf6993aa84/coffee-alt.png')
+          image(colortable('wool'), url)
         """
-        loc = self.location(where, looking=True)
         if not isinstance(image, BufferedImage):
             image = ImageIO.read(image)
-        xoff = loc.x - image.width / 2
-        yoff = loc.y - image.height / 2
-        def blocktype_function(x, y, z):
-            ix = int(x - xoff)
-            iy = image.height - int(y - yoff) # flip vertically
-            if ix < 0 or iy < 0 or ix >= image.width or iy >= image.height:
-                return None
-            argb = image.getRGB(ix, iy)
-            a = 0xff & (argb >> 24)
-            r = 0xff & (argb >> 16)
-            g = 0xff & (argb >> 8)
-            b = 0xff & argb
-            if a < 64:
-                return Material.AIR # TEMP
-            return _closest_material(colortable, r, g, b)
-        # TODO: Make orientation (e.g. XZ vs. XY vs. YZ) configurable.
-        self._blocks(loc, image.width / 2, image.height / 2, 0, blocktype_function)
+
+        loc = self.location(where, looking=True)
+
+        def coord(d, ix, iy):
+            return wstep[d] * ix + hstep[d] * iy
+
+        cix = image.width / 2
+        ciy = image.height / 2
+
+        for iy in range(0, image.height):
+            for ix in range(0, image.width):
+                argb = image.getRGB(ix, iy)
+                a = 0xff & (argb >> 24)
+                r = 0xff & (argb >> 16)
+                g = 0xff & (argb >> 8)
+                b = 0xff & argb
+                if a < 64:
+                    continue
+                x = int(loc.x + coord(0, ix - cix, iy - ciy))
+                y = int(loc.y + coord(1, ix - cix, iy - ciy))
+                z = int(loc.z + coord(2, ix - cix, iy - ciy))
+                block_material = _closest_material(colortable, r, g, b)
+                self.world().getBlockAt(x, y, z).type = block_material
 
     @synchronous()
     def _blocks(self, loc, xradius, yradius, zradius, block_function):
