@@ -7,6 +7,12 @@ from java.net import URL
 from javax.imageio import ImageIO
 from org.bukkit import GameMode
 
+################## UTILITY ###################
+
+def sign(n):
+    if n == 0: return 0
+    return 1 if n > 0 else -1
+
 ############## BLOCK ITERATION ###############
 
 def airy(block):
@@ -391,6 +397,7 @@ class Perspective:
         Gets the perspective's world. For player-based perspectives, this means
         the world in which the perspective's linked player currently resides.
         """
+        # TODO: add optional where param, to get world of the given place.
         return self._world if self._world else self.player().world
 
     def location(self, where=None, looking=False):
@@ -438,7 +445,7 @@ class Perspective:
         :param where: Place whose coordinates are needed (default linked location).
         """
         loc = self.location(where)
-        return [ix(loc), iy(loc), iz(loc)]
+        return [self.ix(loc), self.iy(loc), self.iz(loc)]
 
     def fx(self, where=None):
         """
@@ -466,6 +473,7 @@ class Perspective:
         Gets a place's X coordinate as an integer.
         :param where Place whose X coordinate is needed (default current location).
         """
+        loc = self.location(where)
         return int(round(self.fx(loc)))
 
     def iy(self, where=None):
@@ -473,6 +481,7 @@ class Perspective:
         Gets a place's Y coordinate as an integer.
         :param loc Location to convert (default current location).
         """
+        loc = self.location(where)
         return int(round(self.fy(loc)))
 
     def iz(self, where=None):
@@ -480,6 +489,7 @@ class Perspective:
         Gets a place's Z coordinate as an integer.
         :param loc Location to convert (default current location).
         """
+        loc = self.location(where)
         return int(round(self.fz(loc)))
 
     def lookingat(self, who=None, distance=100):
@@ -921,6 +931,75 @@ class Perspective:
                 if c == ' ': continue
                 for y in range(py, py + height):
                     self.world().getBlockAt(x, y, z).type = block_material
+
+    @synchronous()
+    def rail(self, wherestart, whereend, blocktype):
+        """
+        Lays down rail from one location to another.
+
+        :param wherestart: Starting position of the rail.
+        :param whereend: Ending position of the rail.
+        :param blocktype: The type of block under the rail.
+        """
+        world = self.world()
+        x, y, z = self.ipos(wherestart)
+        y = float(y)
+        stop = self.ipos(whereend)
+        block_material = material(blocktype)
+
+        xdiff = stop[0] - x
+        xinc = sign(xdiff)
+        zdiff = stop[2] - z
+        zinc = sign(zdiff)
+        ydiff = stop[1] - y
+
+        xzdist = abs(xdiff) - abs(zdiff)
+        if xzdist > 0:
+            raildir = True # lay along X
+            oomph = xzdist
+        else:
+            raildir = False # lay along Z
+            oomph = -xzdist
+
+        step = 0
+        maxsteps = abs(xdiff) + 2*abs(ydiff) + abs(zdiff) + 5
+        while (x, y, z) != stop:
+            step += 1
+            if step > maxsteps:
+                print('[ERROR] Rail path did not converge!')
+                break
+
+            if raildir:
+                x += xinc
+            else:
+                z += zinc
+            oomph -= 1
+            rail_material = Material.POWERED_RAIL
+
+            if oomph == 0:
+                # turn
+                raildir = not raildir
+                rail_material = Material.RAIL
+                xinc = 1 if x < stop[0] else -1
+                zinc = 1 if z < stop[2] else -1
+                oomph = 2
+            elif int(y) != stop[1]:
+                yinc = (stop[1] - y) / (abs(stop[0] - x) + abs(stop[2] - z))
+                if yinc < -1: yinc = -1
+                if yinc > 1: yinc = 1
+                y += yinc
+
+            blk = self.world().getBlockAt(int(x), int(y), int(z))
+            if not airy(blk):
+                print('[ERROR] Track ran into something!')
+                return
+            blk.type = block_material
+
+            blk1 = self.world().getBlockAt(int(x), int(y+1), int(z))
+            if not airy(blk1):
+                print('[ERROR] Rail ran into something!')
+                return
+            blk1.type = rail_material
 
     ############### MISCELLANEOUS ################
 
