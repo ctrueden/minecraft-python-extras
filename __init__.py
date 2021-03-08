@@ -16,11 +16,57 @@ def sign(n):
 ############## BLOCK ITERATION ###############
 
 def airy(block):
-    type = block.type
-    return type == Material.AIR or \
-           type == Material.CAVE_AIR or \
-           type == Material.VOID_AIR or \
-           type == Material.WATER
+    t = block.type if hasattr(block, 'type') else block
+    return t == Material.AIR or \
+           t == Material.CAVE_AIR or \
+           t == Material.VOID_AIR
+
+def watery(block):
+    t = block.type if hasattr(block, 'type') else block
+    return t == Material.WATER
+
+def airorwater(block):
+    return airy(block) or watery(block)
+
+def grassy(block):
+    t = block.type if hasattr(block, 'type') else block
+    return t == Material.GRASS_BLOCK
+
+def planty(block):
+    t = block.type if hasattr(block, 'type') else block
+    return t == Material.GRASS or \
+           t == Material.TALL_GRASS or \
+           t == Material.OXEYE_DAISY or \
+           t == Material.DANDELION or \
+           t == Material.CORNFLOWER or \
+           t == Material.POPPY
+
+def dirty(block):
+    t = block.type if hasattr(block, 'type') else block
+    return t == Material.GRASS_BLOCK or \
+           t == Material.DIRT or \
+           t == Material.COARSE_DIRT
+
+def stony(block):
+    t = block.type if hasattr(block, 'type') else block
+    return t == Material.STONE or \
+           t == Material.COBBLESTONE or \
+           t == Material.GRANITE or \
+           t == Material.ANDESITE or \
+           t == Material.DIORITE
+
+def sandy(block):
+    t = block.type if hasattr(block, 'type') else block
+    return t == Material.SAND or \
+           t == Material.SANDSTONE
+
+def glowing(block):
+    t = block.type if hasattr(block, 'type') else block
+    return t == Material.TORCH or \
+           t == Material.GLOWSTONE or \
+           t == Material.SEA_LANTERN or \
+           t == Material.LANTERN or \
+           t == Material.REDSTONE_LAMP
 
 class LocationQueue:
     def __init__(self, origin, limit):
@@ -714,12 +760,13 @@ class Perspective:
         Fills up dark nooks with the given block type.
         """
         origin = self.location(where)
-        if not airy(origin.block):
+
+        if not airorwater(origin.block):
             return
         queue = LocationQueue(origin, limit)
         while queue:
             loc = self.location(queue.pop())
-            if not airy(loc.block):
+            if not airorwater(loc.block):
                 continue
             n = self.location([loc.x-1, loc.y, loc.z]).block
             s = self.location([loc.x+1, loc.y, loc.z]).block
@@ -735,7 +782,7 @@ class Perspective:
             queue.push(d.x, d.y, d.z)
             if loc.block.lightLevel >= minlight:
                 continue
-            airs = [airy(n), airy(s), airy(e), airy(w), airy(u), airy(d)].count(True)
+            airs = [airorwater(n), airorwater(s), airorwater(e), airorwater(w), airorwater(u), airorwater(d)].count(True)
             if airs <= 3:
                 self.block(blocktype, loc)
 
