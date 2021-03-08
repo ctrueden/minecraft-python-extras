@@ -786,6 +786,43 @@ class Perspective:
             if airs <= 3:
                 self.block(blocktype, loc)
 
+    def torchline(self, where=None, limit=100, torchtype=Material.TORCH, fencetype=None):
+        """
+        Places a line of torches along a fence line in the given location.
+        """
+        if limit < 0:
+            return
+        loc = self.location(where, looking=True)
+        if fencetype is None:
+            fencetype = loc.block.type
+        u = self.location([loc.x, loc.y+1, loc.z])
+        d = self.location([loc.x, loc.y-1, loc.z])
+        if airy(loc.block) and loc.y >= 0:
+            # we are too high -- drop down
+            self.torchline(d, limit, torchtype, fencetype)
+            return
+        if loc.block.type != fencetype:
+            # not a fence this way -- stop
+            return
+        if u.block.type == fencetype:
+            # fence goes higher -- jump up
+            self.torchline(u, limit, torchtype, fencetype)
+            return
+        if airy(u.block):
+            # at the top of a fence -- put a torch on top
+            self.block(torchtype, u)
+            # and check adjacent squares
+            n = self.location([loc.x-1, loc.y, loc.z])
+            s = self.location([loc.x+1, loc.y, loc.z])
+            e = self.location([loc.x, loc.y, loc.z-1])
+            w = self.location([loc.x, loc.y, loc.z+1])
+            ne = self.location([loc.x-1, loc.y, loc.z-1])
+            se = self.location([loc.x+1, loc.y, loc.z-1])
+            nw = self.location([loc.x-1, loc.y, loc.z+1])
+            sw = self.location([loc.x+1, loc.y, loc.z+1])
+            for b in (n, s, e, w, ne, se, nw, sw):
+                self.torchline(b, limit-1, torchtype, fencetype)
+
     def block(self, blocktype, where=None):
         """
         Assigns a block of the given type to the specified location.
