@@ -823,6 +823,69 @@ class Perspective:
             for b in (n, s, e, w, ne, se, nw, sw):
                 self.torchline(b, limit-1, torchtype, fencetype)
 
+    @synchronous()
+    def astroturf(self, where=None, limit=50):
+        """
+        Converts grass blocks into astroturf: jack-o-lanterns with green carpet
+        on top. This is a form of hidden lighting, to keep mobs off your lawn.
+        """
+        if limit < 0:
+            return
+        origin = self.location(where, looking=True)
+
+        def carpetable(b):
+            return airy(b) or glowing(b) or planty(b)
+
+        def turfable(b):
+            return grassy(b) or dirty(b) or stony(b) or \
+                   sandy(b) or b.type == Material.JACK_O_LANTERN
+
+        queue = LocationQueue(origin, limit)
+        while queue:
+            loc = self.location(queue.pop())
+            while loc.block.type != Material.GRASS_BLOCK \
+                    and turfable(loc.block) \
+                    and not carpetable(loc.block):
+                # block may be underground; check upward
+                loc = self.location([loc.x, loc.y+1, loc.z])
+            while carpetable(loc.block):
+                # block may be above ground; check downward
+                loc = self.location([loc.x, loc.y-1, loc.z])
+            u = self.location([loc.x, loc.y+1, loc.z]).block
+            d = self.location([loc.x, loc.y-1, loc.z]).block
+            n = self.location([loc.x-1, loc.y, loc.z]).block
+            s = self.location([loc.x+1, loc.y, loc.z]).block
+            e = self.location([loc.x, loc.y, loc.z-1]).block
+            w = self.location([loc.x, loc.y, loc.z+1]).block
+            ne = self.location([loc.x-1, loc.y, loc.z-1]).block
+            se = self.location([loc.x+1, loc.y, loc.z-1]).block
+            nw = self.location([loc.x-1, loc.y, loc.z+1]).block
+            sw = self.location([loc.x+1, loc.y, loc.z+1]).block
+            dn = self.location([loc.x-1, loc.y-1, loc.z]).block
+            ds = self.location([loc.x+1, loc.y-1, loc.z]).block
+            de = self.location([loc.x, loc.y-1, loc.z-1]).block
+            dw = self.location([loc.x, loc.y-1, loc.z+1]).block
+            dne = self.location([loc.x-1, loc.y-1, loc.z-1]).block
+            dse = self.location([loc.x+1, loc.y-1, loc.z-1]).block
+            dnw = self.location([loc.x-1, loc.y-1, loc.z+1]).block
+            dsw = self.location([loc.x+1, loc.y-1, loc.z+1]).block
+            if dirty(loc.block) \
+                    and carpetable(u) and turfable(d) \
+                    and turfable(n) and turfable(s) \
+                    and turfable(e) and turfable(w) \
+                    and turfable(ne) and turfable(se) \
+                    and turfable(nw) and turfable(sw) \
+                    and turfable(dn) and turfable(ds) \
+                    and turfable(de) and turfable(dw) \
+                    and turfable(dne) and turfable(dse) \
+                    and turfable(dnw) and turfable(dsw):
+                loc.block.type = Material.JACK_O_LANTERN
+                u.type = Material.GREEN_CARPET
+            queue.push(n.x, n.y, n.z)
+            queue.push(s.x, s.y, s.z)
+            queue.push(e.x, e.y, e.z)
+            queue.push(w.x, w.y, w.z)
+
     def block(self, blocktype, where=None):
         """
         Assigns a block of the given type to the specified location.
