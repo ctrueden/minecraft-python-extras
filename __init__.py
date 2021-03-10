@@ -704,18 +704,18 @@ class Perspective:
         """
         self.teleport([self.fx() + amount, self.fy(), self.fz()], who)
 
-    def east(self, amount=1):
-        """
-        Teleports the linked player eastward by the given amount.
-        :param amount: Number of cubes eastward to teleport.
-        :param who: Person to be teleported (default linked player).
-        """
-        self.teleport([self.fx(), self.fy(), self.fz() - amount], who)
-
     def west(self, amount=1):
         """
         Teleports the linked player westward by the given amount.
         :param amount: Number of cubes westward to teleport.
+        :param who: Person to be teleported (default linked player).
+        """
+        self.teleport([self.fx(), self.fy(), self.fz() - amount], who)
+
+    def east(self, amount=1):
+        """
+        Teleports the linked player eastward by the given amount.
+        :param amount: Number of cubes eastward to teleport.
         :param who: Person to be teleported (default linked player).
         """
         self.teleport([self.fx(), self.fy(), self.fz() + amount], who)
@@ -771,8 +771,8 @@ class Perspective:
                 continue
             n = self.location([loc.x-1, loc.y, loc.z]).block
             s = self.location([loc.x+1, loc.y, loc.z]).block
-            e = self.location([loc.x, loc.y, loc.z-1]).block
-            w = self.location([loc.x, loc.y, loc.z+1]).block
+            w = self.location([loc.x, loc.y, loc.z-1]).block
+            e = self.location([loc.x, loc.y, loc.z+1]).block
             u = self.location([loc.x, loc.y+1, loc.z]).block
             d = self.location([loc.x, loc.y-1, loc.z]).block
             queue.push(n.x, n.y, n.z)
@@ -815,12 +815,12 @@ class Perspective:
             # and check adjacent squares
             n = self.location([loc.x-1, loc.y, loc.z])
             s = self.location([loc.x+1, loc.y, loc.z])
-            e = self.location([loc.x, loc.y, loc.z-1])
-            w = self.location([loc.x, loc.y, loc.z+1])
-            ne = self.location([loc.x-1, loc.y, loc.z-1])
-            se = self.location([loc.x+1, loc.y, loc.z-1])
-            nw = self.location([loc.x-1, loc.y, loc.z+1])
-            sw = self.location([loc.x+1, loc.y, loc.z+1])
+            w = self.location([loc.x, loc.y, loc.z-1])
+            e = self.location([loc.x, loc.y, loc.z+1])
+            nw = self.location([loc.x-1, loc.y, loc.z-1])
+            sw = self.location([loc.x+1, loc.y, loc.z-1])
+            ne = self.location([loc.x-1, loc.y, loc.z+1])
+            se = self.location([loc.x+1, loc.y, loc.z+1])
             for b in (n, s, e, w, ne, se, nw, sw):
                 self.torchline(b, limit-1, torchtype, fencetype)
 
@@ -856,30 +856,30 @@ class Perspective:
             d = self.location([loc.x, loc.y-1, loc.z]).block
             n = self.location([loc.x-1, loc.y, loc.z]).block
             s = self.location([loc.x+1, loc.y, loc.z]).block
-            e = self.location([loc.x, loc.y, loc.z-1]).block
-            w = self.location([loc.x, loc.y, loc.z+1]).block
-            ne = self.location([loc.x-1, loc.y, loc.z-1]).block
-            se = self.location([loc.x+1, loc.y, loc.z-1]).block
-            nw = self.location([loc.x-1, loc.y, loc.z+1]).block
-            sw = self.location([loc.x+1, loc.y, loc.z+1]).block
+            w = self.location([loc.x, loc.y, loc.z-1]).block
+            e = self.location([loc.x, loc.y, loc.z+1]).block
+            nw = self.location([loc.x-1, loc.y, loc.z-1]).block
+            sw = self.location([loc.x+1, loc.y, loc.z-1]).block
+            ne = self.location([loc.x-1, loc.y, loc.z+1]).block
+            se = self.location([loc.x+1, loc.y, loc.z+1]).block
             dn = self.location([loc.x-1, loc.y-1, loc.z]).block
             ds = self.location([loc.x+1, loc.y-1, loc.z]).block
-            de = self.location([loc.x, loc.y-1, loc.z-1]).block
-            dw = self.location([loc.x, loc.y-1, loc.z+1]).block
-            dne = self.location([loc.x-1, loc.y-1, loc.z-1]).block
-            dse = self.location([loc.x+1, loc.y-1, loc.z-1]).block
-            dnw = self.location([loc.x-1, loc.y-1, loc.z+1]).block
-            dsw = self.location([loc.x+1, loc.y-1, loc.z+1]).block
+            dw = self.location([loc.x, loc.y-1, loc.z-1]).block
+            de = self.location([loc.x, loc.y-1, loc.z+1]).block
+            dnw = self.location([loc.x-1, loc.y-1, loc.z-1]).block
+            dsw = self.location([loc.x+1, loc.y-1, loc.z-1]).block
+            dne = self.location([loc.x-1, loc.y-1, loc.z+1]).block
+            dse = self.location([loc.x+1, loc.y-1, loc.z+1]).block
             if dirty(loc.block) \
                     and carpetable(u) and turfable(d) \
                     and turfable(n) and turfable(s) \
-                    and turfable(e) and turfable(w) \
-                    and turfable(ne) and turfable(se) \
+                    and turfable(w) and turfable(e) \
                     and turfable(nw) and turfable(sw) \
+                    and turfable(ne) and turfable(se) \
                     and turfable(dn) and turfable(ds) \
-                    and turfable(de) and turfable(dw) \
-                    and turfable(dne) and turfable(dse) \
-                    and turfable(dnw) and turfable(dsw):
+                    and turfable(dw) and turfable(de) \
+                    and turfable(dnw) and turfable(dsw) \
+                    and turfable(dne) and turfable(dse):
                 loc.block.type = Material.JACK_O_LANTERN
                 u.type = Material.GREEN_CARPET
             queue.push(n.x, n.y, n.z)
