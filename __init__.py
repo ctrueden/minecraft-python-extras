@@ -790,6 +790,11 @@ class Perspective:
     def torchline(self, where=None, limit=100, torchtype=Material.TORCH, fencetype=None):
         """
         Places a line of torches along a fence line in the given location.
+
+        :param where:
+        :param limit: Default 100.
+        :param torchtype: Default normal torches.
+        :param fencetype: Default is the block type of the given location.
         """
         if limit < 0:
             return
@@ -829,6 +834,9 @@ class Perspective:
         """
         Converts grass blocks into astroturf: jack-o-lanterns with green carpet
         on top. This is a form of hidden lighting, to keep mobs off your lawn.
+
+        :param where:
+        :param limit: Default 50.
         """
         if limit < 0:
             return
