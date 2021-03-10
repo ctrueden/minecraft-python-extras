@@ -36,9 +36,10 @@ def planty(block):
     t = block.type if hasattr(block, 'type') else block
     return t == Material.GRASS or \
            t == Material.TALL_GRASS or \
-           t == Material.OXEYE_DAISY or \
-           t == Material.DANDELION or \
+           t == Material.AZURE_BLUET or \
            t == Material.CORNFLOWER or \
+           t == Material.DANDELION or \
+           t == Material.OXEYE_DAISY or \
            t == Material.POPPY
 
 def dirty(block):
