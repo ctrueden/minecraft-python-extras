@@ -384,11 +384,12 @@ def pov(who=None, world=None, where=None):
     Note that if you wrap a world rather than a player, some functions
     will not work, since the POV will not have an associated position.
 
-    :param who: The player around whom to construct the point of view.
+    :param who: Name of the player around whom to construct the point of view.
     :param world: The world around which to construct the point of view.
     :param where: The location around which to construct the point of view.
     """
-    return Perspective(who, world, where)
+    who = player(who) if who else None
+    return Perspective(who, world, where) if who or world or where else None
 
 ################# CONTAINERS #################
 
@@ -408,7 +409,7 @@ def pov(who=None, world=None, where=None):
 class Perspective:
     """An object encapsulating a point of view in the Minecraft universe."""
 
-    def __init__(self, who=None, world=None, where=None):
+    def __init__(self, player=None, world=None, where=None):
         """
         Constructs a perspective around the given player, or world & location.
 
@@ -416,11 +417,11 @@ class Perspective:
         used for world-specific commands. Alternately, if a world and location
         are given, the perspective will be fixed at that point.
 
-        :param who: The player to wrap.
-        :param world: The world to wrap.
+        :param player: The Player to wrap.
+        :param world: The World to wrap.
         :param where: Location to wrap.
         """
-        self._player = self.player(who)
+        self._player = player
         self._world = world
         self._loc = None if self._player else self.location(where)
         self.mark_points = {}
@@ -1308,13 +1309,14 @@ class CompassUpdater(BukkitRunnable):
         self.player.setCompassTarget(self.target.location)
 
 
+################## PLAYERS ###################
+# Specific to me -- if you want this generalized, file an issue
+# and I'll turn it into a config file. Otherwise, YAGNI! ;-)
 
-# FIND OBJECTS
-#def findblock(pos, blocktype, maxradiusx=50, maxradiusy=50, maxradiusz=50):
-#    """
-#    Locates the nearest block of a particular type.
-#    """
-#    return WORLD.getBlockAt(r['x'], r['y'], r['z'])
+ted = pov('FlexibleKid7')
+mn = pov('MilesintheNether')
+rg = pov('restlessgamer7')
+
 
 ################### IDEAS ####################
 
