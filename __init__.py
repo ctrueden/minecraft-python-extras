@@ -1089,7 +1089,7 @@ class Perspective:
                     self.world().getBlockAt(x, y, z).type = block_material
 
     @synchronous()
-    def rail(self, wherestart, whereend, blocktype):
+    def airrail(self, wherestart, whereend, blocktype):
         """
         Lays down rail from one location to another.
 
@@ -1156,6 +1156,130 @@ class Perspective:
                 print('[ERROR] Rail ran into something!')
                 return
             blk1.type = rail_material
+
+    @synchronous()
+    def layrail(self, where=None, limit=100, powerstep=8):
+        """
+        Places powered rail along an existing track.
+
+        :param where:
+        :param limit: Default 100.
+        :param powerstep: Default 8.
+        """
+        loc = self.location(where, looking=True)
+        tracktype = loc.block.type
+        for x in (-1, 0, 1):
+            for z in (-1, 0, 1):
+                if abs(x ^ z) != 1:
+                    # only traverse n/s/w/e
+                    continue
+                for y in (-1, 0, 1):
+                    nxt = self.location([loc.x+x, loc.y+y, loc.z+z])
+                    above = self.location([nxt.x, nxt.y+1, nxt.z])
+                    if nxt.block.type == tracktype and \
+                            above.block.type != Material.RAIL and \
+                            above.block.type != Material.POWERED_RAIL:
+                        # rail needed in this direction
+                        self._layrail(nxt, limit-1, tracktype, loc, powerstep)
+
+    def _layrail(self, loc, limit, tracktype, previous, powerstep, powerleft=0):
+        if limit < 0:
+            return
+
+        xdiff = loc.x - previous.x
+        zdiff = loc.z - previous.z
+        railtype = Material.RAIL
+        nextloc = None
+
+        # detect track in a straight line
+        xnext = loc.x + xdiff
+        znext = loc.z + zdiff
+        for nxt in (self.location([xnext, loc.y+1, znext]), \
+                    self.location([xnext, loc.y, znext]), \
+                    self.location([xnext, loc.y-1, znext])):
+            if nxt.block.type == tracktype:
+                railtype = Material.POWERED_RAIL
+                nextloc = nxt
+                break
+
+        # detect track turning a corner
+        if nextloc is None:
+            if xdiff != 0:
+                nexts = (
+                    self.location([loc.x, loc.y, loc.z-1]),
+                    self.location([loc.x, loc.y-1, loc.z-1]),
+                    self.location([loc.x, loc.y, loc.z+1]),
+                    self.location([loc.x, loc.y-1, loc.z+1])
+                )
+            elif zdiff != 0:
+                nexts = (
+                    self.location([loc.x-1, loc.y, loc.z]),
+                    self.location([loc.x-1, loc.y-1, loc.z]),
+                    self.location([loc.x+1, loc.y, loc.z]),
+                    self.location([loc.x+1, loc.y-1, loc.z])
+                )
+            else:
+                print('[ERROR] Assertion failed: loc=(%d, %d, %d), xdiff=%d, zdiff=%d' % (loc.x, loc.y, loc.z, xdiff, zdiff))
+                return
+            for nxt in nexts:
+                if nxt.block.type == tracktype:
+                    nextloc = nxt
+                    powerleft = 0
+                    break
+
+        if nextloc is None:
+            print('[ERROR] Track ends at (%d, %d, %d)' % (loc.x, loc.y, loc.z))
+            return
+
+        # lay the rail
+        u = self.location([loc.x, loc.y+1, loc.z])
+        if u.block.type == Material.RAIL or \
+           u.block.type == Material.POWERED_RAIL:
+            # we already have rail on this block of track
+            pass
+        elif not airy(u.block):
+            print('[WARNING] Track at (%d, %d, %d) is blocked!' % (loc.x, loc.y, loc.z))
+        else:
+            u.block.type = railtype
+
+        # power the rail, if needed
+        if u.block.type == Material.POWERED_RAIL:
+            if powerleft > 0:
+                powerleft -= 1
+            else:
+                # power the rail!
+                if xdiff != 0:
+                    sides = (
+                        self.location([loc.x, loc.y, loc.z-1]),
+                        self.location([loc.x, loc.y, loc.z+1])
+                    )
+                elif zdiff != 0:
+                    sides = (
+                        self.location([loc.x-1, loc.y, loc.z]),
+                        self.location([loc.x+1, loc.y, loc.z])
+                    )
+                else:
+                    print('[ERROR] Assertion failed: loc=(%d, %d, %d), xdiff=%d, zdiff=%d' % (loc.x, loc.y, loc.z, xdiff, zdiff))
+                    return
+                torched = False
+                for side in sides:
+                    torchspot = self.location([side.x, side.y+1, side.z]).block
+                    if not airy(torchspot):
+                        if torchspot.type == Material.REDSTONE_TORCH:
+                            torched = True
+                        continue
+                    if airy(side.block):
+                        side.block.type = tracktype
+                    torchspot.type = Material.REDSTONE_TORCH
+                    torched = True
+                if not torched:
+                    # no room for redstone torches; use a redstone block instead
+                    loc.block.type = Material.REDSTONE_BLOCK
+                powerleft = powerstep
+
+        # keep going
+        self._layrail(nextloc, limit-1, tracktype, loc, powerstep, powerleft)
+
 
     ############### MISCELLANEOUS ################
 
