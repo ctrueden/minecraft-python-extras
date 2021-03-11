@@ -1198,7 +1198,10 @@ class Perspective:
         for nxt in (self.location([xnext, loc.y+1, znext]), \
                     self.location([xnext, loc.y, znext]), \
                     self.location([xnext, loc.y-1, znext])):
-            if nxt.block.type == tracktype:
+            above = self.location([nxt.x, nxt.y+1, nxt.z])
+            if nxt.block.type == tracktype or \
+                    above.block.type == Material.POWERED_RAIL or \
+                    above.block.type == Material.RAIL:
                 railtype = Material.POWERED_RAIL
                 nextloc = nxt
                 break
@@ -1223,7 +1226,10 @@ class Perspective:
                 print('[ERROR] Assertion failed: loc=(%d, %d, %d), xdiff=%d, zdiff=%d' % (loc.x, loc.y, loc.z, xdiff, zdiff))
                 return
             for nxt in nexts:
-                if nxt.block.type == tracktype:
+                above = self.location([nxt.x, nxt.y+1, nxt.z])
+                if nxt.block.type == tracktype or \
+                        above.block.type == Material.POWERED_RAIL or \
+                        above.block.type == Material.RAIL:
                     nextloc = nxt
                     powerleft = 0
                     break
