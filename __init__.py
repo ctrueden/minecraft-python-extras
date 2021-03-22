@@ -695,31 +695,31 @@ class Perspective:
         :param amount: Number of cubes northward to teleport.
         :param who: Person to be teleported (default linked player).
         """
-        self.teleport([self.fx() - amount, self.fy(), self.fz()], who)
+        self.teleport([self.fx(), self.fy(), self.fz() - amount], who)
 
-    def south(self, amount=1):
+    def south(self, amount=1, who=None):
         """
         Teleports the linked player southward by the given amount.
         :param amount: Number of cubes southward to teleport.
         :param who: Person to be teleported (default linked player).
         """
-        self.teleport([self.fx() + amount, self.fy(), self.fz()], who)
+        self.teleport([self.fx(), self.fy(), self.fz() + amount], who)
 
-    def west(self, amount=1):
+    def west(self, amount=1, who=None):
         """
         Teleports the linked player westward by the given amount.
         :param amount: Number of cubes westward to teleport.
         :param who: Person to be teleported (default linked player).
         """
-        self.teleport([self.fx(), self.fy(), self.fz() - amount], who)
+        self.teleport([self.fx() - amount, self.fy(), self.fz()], who)
 
-    def east(self, amount=1):
+    def east(self, amount=1, who=None):
         """
         Teleports the linked player eastward by the given amount.
         :param amount: Number of cubes eastward to teleport.
         :param who: Person to be teleported (default linked player).
         """
-        self.teleport([self.fx(), self.fy(), self.fz() + amount], who)
+        self.teleport([self.fx() + amount, self.fy(), self.fz()], who)
 
     def mark(self, label=None, where=None):
         """
