@@ -1092,7 +1092,8 @@ class Perspective:
     @synchronous()
     def airrail(self, wherestart, whereend, blocktype):
         """
-        Lays down rail from one location to another.
+        Lays down rail from one location to another,
+        as straightly as possible while following rail rules.
 
         :param wherestart: Starting position of the rail.
         :param whereend: Ending position of the rail.
@@ -1103,35 +1104,42 @@ class Perspective:
         y = float(y)
         stop = self.ipos(whereend)
         block_material = material(blocktype)
+        rail_material = Material.POWERED_RAIL
 
         xdiff = stop[0] - x
-        xinc = sign(xdiff)
-        zdiff = stop[2] - z
-        zinc = sign(zdiff)
         ydiff = stop[1] - y
-
-        xzdist = abs(xdiff) - abs(zdiff)
-        if xzdist > 0:
+        zdiff = stop[2] - z
+        xinc = sign(xdiff)
+        zinc = sign(zdiff)
+        xzdiff = abs(xdiff) - abs(zdiff)
+        if xzdiff > 0:
             raildir = True # lay along X
-            oomph = xzdist
+            oomph = max(2, abs(xdiff) / max(1, abs(zdiff)))
         else:
             raildir = False # lay along Z
-            oomph = -xzdist
+            oomph = max(2, abs(zdiff) / max(1, abs(xdiff)))
 
         step = 0
         maxsteps = abs(xdiff) + 2*abs(ydiff) + abs(zdiff) + 5
-        while (x, y, z) != stop:
+        while (x, int(y), z) != stop:
             step += 1
             if step > maxsteps:
                 print('[ERROR] Rail path did not converge!')
                 break
-
             if raildir:
                 x += xinc
             else:
                 z += zinc
             oomph -= 1
+            turned_last_time = rail_material == Material.RAIL
             rail_material = Material.POWERED_RAIL
+
+            # compute which direction to move up or down -- if feasible
+            ydenom = abs(stop[0] - x) + abs(stop[2] - z)
+            if ydenom == 0: ydenom = 1
+            yinc = (stop[1] - y) / ydenom
+            if yinc < -1: yinc = -1
+            if yinc > 1: yinc = 1
 
             if oomph == 0:
                 # turn
@@ -1139,21 +1147,31 @@ class Perspective:
                 rail_material = Material.RAIL
                 xinc = 1 if x < stop[0] else -1
                 zinc = 1 if z < stop[2] else -1
-                oomph = 2
+                xdiff = stop[0] - x
+                zdiff = stop[2] - z
+                if raildir:
+                    oomph = max(2, abs(xdiff) / max(1, abs(zdiff)))
+                else:
+                    oomph = max(2, abs(zdiff) / max(1, abs(xdiff)))
+                if yinc < 0:
+                    # cannot go down while turning
+                    yinc = 0
             elif int(y) != stop[1]:
-                yinc = (stop[1] - y) / (abs(stop[0] - x) + abs(stop[2] - z))
-                if yinc < -1: yinc = -1
-                if yinc > 1: yinc = 1
-                y += yinc
+                if turned_last_time and yinc > 0:
+                    # cannot go up after turning
+                    yinc = 0
+            else:
+                yinc = 0
+            y += yinc
 
             blk = self.world().getBlockAt(int(x), int(y), int(z))
-            if not airy(blk):
+            if not airorwater(blk):
                 print('[ERROR] Track ran into something!')
                 return
             blk.type = block_material
 
             blk1 = self.world().getBlockAt(int(x), int(y+1), int(z))
-            if not airy(blk1):
+            if not airorwater(blk1):
                 print('[ERROR] Rail ran into something!')
                 return
             blk1.type = rail_material
