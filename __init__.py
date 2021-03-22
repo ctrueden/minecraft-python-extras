@@ -1293,7 +1293,7 @@ class Perspective:
                         if torchspot.type == Material.REDSTONE_TORCH:
                             torched = True
                         continue
-                    if airy(side.block):
+                    if airorwater(side.block):
                         side.block.type = tracktype
                     torchspot.type = Material.REDSTONE_TORCH
                     torched = True
