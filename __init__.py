@@ -1324,6 +1324,39 @@ class Perspective:
         self._layrail(nextloc, limit-1, tracktype, loc, powerstep, powerleft)
 
 
+    ################# SEARCHING ##################
+
+    def diamonds(self, where=None, limit=100):
+        """
+        Searches around for nearby diamonds.
+        """
+        origin = self.location(where)
+        origin.y = 11 # Diamond level!
+        queue = LocationQueue(origin, limit)
+        hits = []
+        while queue:
+            loc = self.location(queue.pop())
+            if loc.block.type == Material.DIAMOND_ORE:
+                print(loc)
+                hits.append(loc)
+            n = self.location([loc.x-1, loc.y, loc.z]).block
+            s = self.location([loc.x+1, loc.y, loc.z]).block
+            w = self.location([loc.x, loc.y, loc.z-1]).block
+            e = self.location([loc.x, loc.y, loc.z+1]).block
+            u = self.location([loc.x-1, loc.y, loc.z]).block
+            d = self.location([loc.x+1, loc.y, loc.z]).block
+            queue.push(n.x, n.y, n.z)
+            queue.push(s.x, s.y, s.z)
+            queue.push(w.x, w.y, w.z)
+            queue.push(e.x, e.y, e.z)
+            if u.y <= 13 and u.y >= 9:
+                queue.push(u.x, u.y, u.z)
+            if d.y <= 13 and d.y >= 9:
+                queue.push(d.x, d.y, d.z)
+        # TODO: Connected component analysis.
+        return hits
+
+
     ############### MISCELLANEOUS ################
 
     def compasstarget(self, where):
