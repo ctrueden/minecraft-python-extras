@@ -229,6 +229,24 @@ color_values = [
 ]
 
 color_materials = {
+    'carpet': [
+        Material.BLACK_CARPET,
+        Material.BLUE_CARPET,
+        Material.BROWN_CARPET,
+        Material.CYAN_CARPET,
+        Material.GRAY_CARPET,
+        Material.GREEN_CARPET,
+        Material.LIGHT_BLUE_CARPET,
+        Material.LIGHT_GRAY_CARPET,
+        Material.LIME_CARPET,
+        Material.MAGENTA_CARPET,
+        Material.ORANGE_CARPET,
+        Material.PINK_CARPET,
+        Material.PURPLE_CARPET,
+        Material.RED_CARPET,
+        Material.WHITE_CARPET,
+        Material.YELLOW_CARPET
+    ],
     'concrete': [
         Material.BLACK_CONCRETE,
         Material.BLUE_CONCRETE,
