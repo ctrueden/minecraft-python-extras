@@ -3,6 +3,7 @@ from mcapi import *
 from df_maze import Maze
 
 from java.awt.image import BufferedImage
+from java.io import File
 from java.net import URL
 from javax.imageio import ImageIO
 from org.bukkit import GameMode
@@ -213,11 +214,11 @@ color_values = [
     [  0,   0,   0], # black
     [  0,   0, 255], # blue
     [160,  48,  48], # brown
-    [  0, 255, 255], # cyan
-    [128, 128, 128], # gray
-    [  0,   0, 255], # green
-    [128, 128, 255], # light blue
-    [192, 192, 192], # light gray
+    [  0, 128, 128], # cyan
+    [ 85,  85,  85], # gray
+    [  0, 255,   0], # green
+    [  0, 255, 255], # light blue
+    [171, 171, 171], # light gray
     [128, 255, 128], # lime
     [255,   0, 255], # magenta
     [255, 128,   0], # orange
@@ -1011,6 +1012,11 @@ class Perspective:
           image(colortable('wool'), url)
         """
         if not isinstance(image, BufferedImage):
+            if type(image) == str:
+                # Autodetect files versus URLs.
+                image = File(image)
+                if not image.exists():
+                    image = URL(image)
             image = ImageIO.read(image)
 
         loc = self.location(where, looking=True)
