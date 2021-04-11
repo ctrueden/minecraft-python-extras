@@ -2,9 +2,10 @@
 A ridiculously abstracted version of Conway's Game of Life.
 """
 
-import random
+import itertools, random
+from collections.abc import Iterator
 
-class Game(collections.abc.Iterable):
+class Game:
     """
     A game is a function:
         state sub t -> state sub t+1
@@ -18,7 +19,7 @@ class Game(collections.abc.Iterable):
         Given a starting state, returns an iterator for advancing that state
         by repeated application of nextgamestate.
         """
-        class GameState(collections.abc.Iterator):
+        class GameState(Iterator):
             def __init__(self, game, state):
                 self.game = game
                 self.state = state 
@@ -97,7 +98,7 @@ class StableBoardGame(NeighborhoodBoardGame):
         Obtains, for a given board + cell, its neighbor cells.
         The isneighbor method is used to filter the board.
         """
-        return {c, self.board[c] for c in self.board if self.isneighbor(cell, c)}
+        return {c: self.board[c] for c in self.board if self.isneighbor(cell, c)}
 
     def isneighbor(self, cell1, cell2): # Abstract!
         """
@@ -156,7 +157,7 @@ class ZnBoardGame(StableBoardGame):
         dim = len(cell)
         offsets = itertools.product([-1, 0, 1], repeat=dim)
         candidates = [sum(t) for offset in offsets for t in zip(cell, offset)]
-        return [p for p in candidates if p in board and self.isneighbor(cell, p)
+        return [p for p in candidates if p in board and self.isneighbor(cell, p)]
 
     def isneighbor(self, cell1, cell2): # Implemented!
         """
@@ -192,8 +193,8 @@ class ZnBoardGame(StableBoardGame):
 class GameOfLife(ZnBoardGame, LifeGame):
 
     def __init__(self, max_adjacent_dims=2, isolation_threshold=2, birth_min=3, birth_max=3, overcrowding_threshold=5):
-        super.ZnBoardGame.__init__(max_adjacent_dims)
-        super.LifeGame.__init__(isolation_threshold, birth_min, birth_max, overcrowding_threshold)
+        ZnBoardGame.__init__(self, max_adjacent_dims)
+        LifeGame.__init__(self, isolation_threshold, birth_min, birth_max, overcrowding_threshold)
 
 
 def randomize(saturation, extents, live=True, dead=False):
