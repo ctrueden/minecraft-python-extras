@@ -1,11 +1,22 @@
 """
 A ridiculously abstracted version of Conway's Game of Life.
+
+It would be nice to use the ABC mechanism fleshed out in Python 3.
+But this code is intended for use with Jython, and therefore needs
+to run with Python 2.7. So we'll settle for "abstract" methods
+that raise an exception, rather than disallowing instantiation.
 """
 
 import itertools, random
-from collections.abc import Iterator
+import collections
+try:
+    Iterator = collections.abc.Iterator
+except AttributeError:
+    # NB: For Python 2 / Jython.
+    Iterator = collections.Iterator
 
-class Game:
+
+class Game(object):
     """
     A game is a function:
         state sub t -> state sub t+1
@@ -27,13 +38,17 @@ class Game:
             def __next__(self):
                 self.state = self.game.nextgamestate(self.state)
 
+            # NB: For Python 2 / Jython.
+            def next(self):
+                return self.__next__()
+
         return GameState(self, state)
 
     def nextgamestate(self, state): # Abstract!
         """
         Abstract method for advancing a game by one step.
         """
-        raise "Implement me"
+        raise Exception("Unimplemented")
 
 
 class BoardGame(Game):
@@ -47,7 +62,7 @@ class BoardGame(Game):
         Advances the board a step by invoking nextcellstate on each cell.
         """
         next_state = state.copy()
-        for cell in self.cells(state):
+        for cell in state:
             next_state[cell] = self.nextcellstate(state, cell)
         return next_state
 
@@ -55,7 +70,8 @@ class BoardGame(Game):
         """
         Abstract method defining the next cell state for a given board + cell.
         """
-        raise "Implement me"
+        raise Exception("Unimplemented")
+
 
 class NeighborhoodBoardGame(BoardGame):
     """
@@ -73,7 +89,7 @@ class NeighborhoodBoardGame(BoardGame):
         considering only each cell's neighbors, rather than the entire board.
         """
         next_board = board.copy()
-        for cell in self.cells(board):
+        for cell in board:
             next_board[cell] = self.nextcellstate(self.neighbors(board, cell), cell)
         return next_board
 
@@ -81,8 +97,10 @@ class NeighborhoodBoardGame(BoardGame):
         """
         Obtains, for a given board + cell, its neighbor cells.
         By default, all cells of the board are considered neighbors.
+        At minimum, the cell itself must be included in the neighbors set.
         """
         return board
+
 
 class StableBoardGame(NeighborhoodBoardGame):
     """
@@ -104,22 +122,25 @@ class StableBoardGame(NeighborhoodBoardGame):
         """
         Gets whether two cells are neighbors.
         """
-        raise "Implement me"
+        raise Exception("Unimplemented")
+
 
 class LifeGame(NeighborhoodBoardGame):
     """
-    A *life* game is a neighborhood board game where the cells have two states:
-    live (True) and dead (False).
+    A *life* game is a neighborhood board game where the cells have two states,
+    live (True) and dead (False). For each cell, its next state is dictated by
+    the following rules:
 
-    For each cell, its next state is dictated by the following rules:
     - Isolation:    Each live cell whose live neighbors number <= the
                     isolation threshold will die in the next generation.
+
     - Overcrowding: Each live cell whose live neighbors number >= the
                     overcrowding threshold will die in the next generation.
-    - Survival:     Each live cell whose live neighbors number strictly more
-                    than the isolation threshold, but strictly less than the
-                    overcrowding threshold, will remain alive for the next
-                    generation.
+
+    - Survival:     Each live cell whose live neighbors number > the isolation
+                    threshold, but < the overcrowding threshold, will remain
+                    alive for the next generation.
+
     - Birth:        Each dead cell whose live neighbors number >= birth_min
                     and <= birth_max will become live in the next generation.
     """
@@ -136,10 +157,11 @@ class LifeGame(NeighborhoodBoardGame):
         """
         Defines the next cell state for a given board + cell.
         """
-        livecount = board.values().count(True)
-        live = board[cell]
-        return livecount > self.isolation_threshold and livecount < self.overcrowding_threshold if live else \
-               livecount >= self.birth_min and livecount <= self.birth_max
+        c = list(board.values()).count(True) # number of live neighbors
+        live = board[cell] # assumes the cell is a neighbor of itself
+        return c > self.isolation_threshold and c < self.overcrowding_threshold if live else \
+               c >= self.birth_min and c <= self.birth_max
+
 
 class ZnBoardGame(StableBoardGame):
     """
@@ -155,9 +177,26 @@ class ZnBoardGame(StableBoardGame):
         Obtains, for a given board + cell, its neighbor cells.
         """
         dim = len(cell)
+
+        # Iteration of all [-1/0/1, -1/0/1, ...] tuples, dim dimensions long.
+        # E.g. in 2D, this will be:
+        # [
+        #   (-1, -1), (-1, 0), (-1, 1),
+        #    (0, -1),  (0, 0),  (0, 1), 
+        #    (1, -1),  (1, 0),  (1, 1)
+        # ]
         offsets = itertools.product([-1, 0, 1], repeat=dim)
-        candidates = [sum(t) for offset in offsets for t in zip(cell, offset)]
-        return [p for p in candidates if p in board and self.isneighbor(cell, p)]
+
+        # List of coordinates corresponding to the current cell adjusted by each offset.
+        #
+        #   candidates = [cell ++ offset for offset in offsets]
+        #
+        # Where "++" is element-wise addition over equal-length lists/tuples.
+        # But sadly, Python does not have an operator like that (+ on lists
+        # concatenates them), so we have this tricky construction instead:
+        candidates = [tuple(sum(pair) for pair in zip(cell, offset)) for offset in offsets]
+
+        return {p: board[p] for p in candidates if p in board and self.isneighbor(cell, p)}
 
     def isneighbor(self, cell1, cell2): # Implemented!
         """
@@ -180,14 +219,14 @@ class ZnBoardGame(StableBoardGame):
         def adist(v1, v2):
             """
             Adjacency distance:
-            * 0 if v1 == v2
-            * 1 if v1 == v2 + 1 or v1 == v2 - 1
-            * +infinity for all larger differences
+            * 0 if v1=v2
+            * 1 if v1=v2+1 or v1=v2-1
+            * infinity for all larger differences
             """
             d = abs(v1 - v2)
             return d if d <= 1 else float('inf')
 
-        return sum(adist(pair[0], pair[1]) for pair in zip(cell1, cell2)) <= max_adjacent_dims
+        return sum(adist(pair[0], pair[1]) for pair in zip(cell1, cell2)) <= self.max_adjacent_dims
 
 
 class GameOfLife(ZnBoardGame, LifeGame):
@@ -197,16 +236,18 @@ class GameOfLife(ZnBoardGame, LifeGame):
         LifeGame.__init__(self, isolation_threshold, birth_min, birth_max, overcrowding_threshold)
 
 
-def randomize(saturation, extents, live=True, dead=False):
+def random_board(extents, saturation=0.1, live=True, dead=False, seed=None, rng=None):
     """
-    :param saturation: Probability of a cell having the live state. Min 0.0, max 1.0.
+    :param saturation: Probability of a cell having the live state (default 0.1, min 0.0, max 1.0).
+    :param live: The value to use for live state (default True).
+    :param dead: The value to use for dead state (default False).
+    :param seed: The random seed, in case the standard Python RNG is used (default None).
+    :param rng: An object whose random() function generates floats between
+                0.0 and 1.0. The default is a fresh random.Random object using
+                the specified seed, whose aim is a uniform distribution.
     """
     board = {}
+    if rng is None: rng = random.Random(seed)
     for cell in itertools.product(*[range(extent) for extent in extents]):
-        board[cell] = live if random.random() < saturation else dead
+        board[cell] = live if rng.random() < saturation else dead
     return board
-
-
-gol3d = GameOfLife(max_adjacent_dims=3, isolation_threshold=5, birth_min=6, birth_max=7, overcrowding_threshold=9)
-board = randomize(0.1, [10, 12, 7])
-it = gol3d.start(board)
