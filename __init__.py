@@ -1,5 +1,7 @@
 import collections, math
+from random import random
 from mcapi import *
+from gol import GameOfLife
 from df_maze import Maze
 
 from java.awt.image import BufferedImage
@@ -1364,6 +1366,52 @@ class Perspective:
 
 
     ############### MISCELLANEOUS ################
+
+    @synchronous()
+    def gameoflife(self, where=None, xradius=7, yradius=7, zradius=7, saturation=None, live=[Material.SLIME_BLOCK], dead=[Material.AIR, Material.CAVE_AIR]):
+        """
+        Executes one iteration of the game of life, in 3D.
+        """
+        cx, cy, cz = self.ipos(where)
+
+        board = {}
+        xsize = 2 * xradius + 1
+        ysize = 2 * yradius + 1
+        zsize = 2 * zradius + 1
+
+        # convert Minecraft state to game state
+        for x in range(xsize):
+            for y in range(ysize):
+                for z in range(zsize):
+                    px = cx + x - xradius
+                    py = cy + y - yradius
+                    pz = cz + z - zradius
+                    blocktype = self.location([px, py, pz]).block.type
+                    if saturation:
+                        # randomize the board -- but only for blocks in the game
+                        if blocktype in live or blocktype in dead:
+                            board[(x, y, z)] = random() < saturation
+                    else:
+                        # set the cell to match the Minecraft state
+                        if blocktype in live:
+                            board[(x, y, z)] = True
+                        elif blocktype in dead:
+                            board[(x, y, z)] = False
+
+        gol3d = GameOfLife(max_adjacent_dims=3, isolation_threshold=5, birth_min=6, birth_max=7, overcrowding_threshold=9)
+        game = gol3d.start(board)
+
+        if not saturation:
+            # iterate the game
+            game.next()
+
+        # convert game state back to Minecraft state
+        for x, y, z in game.state:
+            px = cx + x - xradius
+            py = cy + y - yradius
+            pz = cz + z - zradius
+            self.location([px, py, pz]).block.type = live[0] if game.state[(x, y, z)] else dead[0]
+
 
     def compasstarget(self, where):
         """
