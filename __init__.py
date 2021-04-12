@@ -2,6 +2,7 @@ import collections, math
 from random import random
 from mcapi import *
 from gol import GameOfLife
+from golfast import golfast
 from df_maze import Maze
 
 from java.awt.image import BufferedImage
@@ -1368,9 +1369,30 @@ class Perspective:
     ############### MISCELLANEOUS ################
 
     @synchronous()
-    def gameoflife(self, where=None, xradius=7, yradius=7, zradius=7, saturation=None, live=[Material.SLIME_BLOCK], dead=[Material.AIR, Material.CAVE_AIR]):
+    def gameoflife(self, where=None, xradius=7, yradius=7, zradius=7, saturation=None):
+        cx, cy, cz = self.ipos(where)
+        live = Material.SLIME_BLOCK
+        dead = Material.AIR
+
+        if saturation is not None:
+            # randomize the board
+            for x in range(2 * xradius + 1):
+                for y in range(2 * yradius + 1):
+                    for z in range(2 * zradius + 1):
+                        px = cx + x - xradius
+                        py = cy + y - yradius
+                        pz = cz + z - zradius
+                        block = self.location([px, py, pz]).block
+                        if block.type == live or block.type == dead:
+                            block.type = live if random() < saturation else dead
+            return
+
+        golfast(self.world(), cx - xradius, cx + xradius, cy - yradius, cy + yradius, cz - zradius, cz + zradius)
+
+    @synchronous()
+    def gameoflife_slow(self, where=None, xradius=7, yradius=7, zradius=7, saturation=None, live=[Material.SLIME_BLOCK], dead=[Material.AIR, Material.CAVE_AIR]):
         """
-        Executes one iteration of the game of life, in 3D.
+        Executes one iteration of the game of life, in 3D, using pure Python.
         """
         cx, cy, cz = self.ipos(where)
 
