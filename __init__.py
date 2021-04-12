@@ -1368,73 +1368,6 @@ class Perspective:
 
     ############### MISCELLANEOUS ################
 
-    @synchronous()
-    def gameoflife(self, where=None, xradius=7, yradius=7, zradius=7, saturation=None):
-        cx, cy, cz = self.ipos(where)
-        live = Material.SLIME_BLOCK
-        dead = Material.AIR
-
-        if saturation is not None:
-            # randomize the board
-            for x in range(2 * xradius + 1):
-                for y in range(2 * yradius + 1):
-                    for z in range(2 * zradius + 1):
-                        px = cx + x - xradius
-                        py = cy + y - yradius
-                        pz = cz + z - zradius
-                        block = self.location([px, py, pz]).block
-                        if block.type == live or block.type == dead:
-                            block.type = live if random() < saturation else dead
-            return
-
-        golfast(self.world(), cx - xradius, cx + xradius, cy - yradius, cy + yradius, cz - zradius, cz + zradius)
-
-    @synchronous()
-    def gameoflife_slow(self, where=None, xradius=7, yradius=7, zradius=7, saturation=None, live=[Material.SLIME_BLOCK], dead=[Material.AIR, Material.CAVE_AIR]):
-        """
-        Executes one iteration of the game of life, in 3D, using pure Python.
-        """
-        cx, cy, cz = self.ipos(where)
-
-        board = {}
-        xsize = 2 * xradius + 1
-        ysize = 2 * yradius + 1
-        zsize = 2 * zradius + 1
-
-        # convert Minecraft state to game state
-        for x in range(xsize):
-            for y in range(ysize):
-                for z in range(zsize):
-                    px = cx + x - xradius
-                    py = cy + y - yradius
-                    pz = cz + z - zradius
-                    blocktype = self.location([px, py, pz]).block.type
-                    if saturation:
-                        # randomize the board -- but only for blocks in the game
-                        if blocktype in live or blocktype in dead:
-                            board[(x, y, z)] = random() < saturation
-                    else:
-                        # set the cell to match the Minecraft state
-                        if blocktype in live:
-                            board[(x, y, z)] = True
-                        elif blocktype in dead:
-                            board[(x, y, z)] = False
-
-        gol3d = GameOfLife(max_adjacent_dims=3, isolation_threshold=5, birth_min=6, birth_max=7, overcrowding_threshold=9)
-        game = gol3d.start(board)
-
-        if not saturation:
-            # iterate the game
-            game.next()
-
-        # convert game state back to Minecraft state
-        for x, y, z in game.state:
-            px = cx + x - xradius
-            py = cy + y - yradius
-            pz = cz + z - zradius
-            self.location([px, py, pz]).block.type = live[0] if game.state[(x, y, z)] else dead[0]
-
-
     def compasstarget(self, where):
         """
         Points the linked player's compass to the specified place.
@@ -1468,6 +1401,129 @@ ted = pov('FlexibleKid7')
 mn = pov('MilesintheNether')
 rg = pov('restlessgamer7')
 
+
+################ GAME OF LIFE ################
+
+@synchronous()
+def golslow(world, cx, cy, cz, xradius=7, yradius=7, zradius=7, saturation=None, live=[Material.SLIME_BLOCK], dead=[Material.AIR, Material.CAVE_AIR]):
+    """
+    Executes one iteration of the game of life, in 3D, using pure Python.
+    NB: This version is not used by the current game timer, due to performance.
+    """
+    board = {}
+    xsize = 2 * xradius + 1
+    ysize = 2 * yradius + 1
+    zsize = 2 * zradius + 1
+
+    # convert Minecraft state to game state
+    for x in range(xsize):
+        for y in range(ysize):
+            for z in range(zsize):
+                px = cx + x - xradius
+                py = cy + y - yradius
+                pz = cz + z - zradius
+                blocktype = world.getBlockAt(px, py, pz).type
+                if saturation:
+                    # randomize the board -- but only for blocks in the game
+                    if blocktype in live or blocktype in dead:
+                        board[(x, y, z)] = random() < saturation
+                else:
+                    # set the cell to match the Minecraft state
+                    if blocktype in live:
+                        board[(x, y, z)] = True
+                    elif blocktype in dead:
+                        board[(x, y, z)] = False
+
+    gol3d = GameOfLife(max_adjacent_dims=3, isolation_threshold=5, birth_min=6, birth_max=7, overcrowding_threshold=9)
+    game = gol3d.start(board)
+
+    if not saturation:
+        # iterate the game
+        game.next()
+
+    # convert game state back to Minecraft state
+    for x, y, z in game.state:
+        px = cx + x - xradius
+        py = cy + y - yradius
+        pz = cz + z - zradius
+        world.getBlockAt(px, py, pz).type = live[0] if game.state[(x, y, z)] else dead[0]
+
+def gameoflife():
+    global goltimer
+    goltimer = GameOfLifeUpdater()
+    goltimer.runTaskTimer(PLUGIN, 0, 10)
+
+class GameOfLifeUpdater(BukkitRunnable):
+    def __init__(self):
+        self.world = WORLD
+        self.xMin = 210
+        self.xMax = 248
+        self.yMin = 65
+        self.yMax = 103
+        self.zMin = -228
+        self.zMax = -216
+
+        self.game = golfast(self.world, self.xMin, self.xMax, self.yMin, self.yMax, self.zMin, self.zMax)
+
+    def magiclever(self):
+        return self.world.getBlockAt(229, 85, -182)
+
+    def gamelamp(self):
+        return self.world.getBlockAt(229, 84, -182)
+
+    def leftplate(self):
+        return self.world.getBlockAt(227, 84, -181)
+
+    def rightplate(self):
+        return self.world.getBlockAt(231, 84, -181)
+
+    def platepressed(self, plate):
+        return plate.data & 0x1 != 0
+
+    def inventory_item_count(self, x, y, z, default):
+        try:
+            block = self.world.getBlockAt(x, y, z)
+            return sum(item.amount for item in block.state.inventory if item)
+        except:
+            return default
+
+    def randomizing(self):
+        return self.platepressed(self.leftplate())
+
+    def patterning(self):
+        return self.platepressed(self.rightplate())
+
+    def iterating(self):
+        return self.gamelamp().blockPowered
+
+    def clearboard(self):
+        self.game.shuffle(0)
+
+    def run(self):
+        try:
+            birth_min = self.inventory_item_count(232, 84, -181, 6)
+            birth_max = self.inventory_item_count(232, 84, -180, 6)
+            starvation_max = self.inventory_item_count(232, 84, -179, 3)
+            suffocation_min = self.inventory_item_count(232, 84, -178, 8)
+            self.game.setRules(3, birth_min, birth_max, starvation_max, suffocation_min)
+
+            # apparate the magic lever!
+            lever = self.magiclever()
+            if lever.type != Material.LEVER:
+                lever.type = Material.LEVER
+                lever.data = 14 # face=floor, facing=west, powered=true
+
+            if self.randomizing():
+                self.game.shuffle(0.1)
+            elif self.iterating():
+                self.game.step()
+            else:
+                # disappear the lever!
+                lever = self.magiclever()
+                lever.type = Material.AIR
+                self.cancel()
+        except Exception as e:
+            print(e)
 
 ################### IDEAS ####################
 

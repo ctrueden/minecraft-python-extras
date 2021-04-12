@@ -11,5 +11,5 @@ indir="$dir/java"
 builddir="$dir/build"
 mkdir -p "$builddir" &&
 javac -cp "$mcroot/spigot.jar" -d "$builddir" "$indir"/*.java &&
-(cd "$builddir" && jar cf "$dir/mcx.jar" .) &&
+(cd "$builddir" && jar cf "$dir/mcx.jar" .)
 rm -rf "$builddir"

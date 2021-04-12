@@ -12,10 +12,10 @@ public class GameOfLife3D {
   private final int xMax, yMax, zMax;
   private final int xLen, yLen, zLen;
 
-  private final int maxAdjacentDims;
-  private final int birthMin, birthMax;
-  private final int starvationMax;
-  private final int suffocationMin;
+  private int maxAdjacentDims;
+  private int birthMin, birthMax;
+  private int starvationMax;
+  private int suffocationMin;
 
   /** Buffer storing the next game state, reused for each step. */
   private final Material[][][] next;
@@ -27,12 +27,16 @@ public class GameOfLife3D {
     this.xMin = xMin; this.xMax = xMax; xLen = xMax - xMin + 1;
     this.yMin = yMin; this.yMax = yMax; yLen = yMax - yMin + 1;
     this.zMin = zMin; this.zMax = zMax; zLen = zMax - zMin + 1;
+    setRules(maxAdjacentDims, birthMin, birthMax, starvationMax, suffocationMin);
+    next = new Material[xLen][yLen][zLen];
+  }
+
+  public void setRules(int maxAdjacentDims, int birthMin, int birthMax, int starvationMax, int suffocationMin) {
     this.maxAdjacentDims = maxAdjacentDims;
     this.birthMin = birthMin;
     this.birthMax = birthMax;
     this.starvationMax = starvationMax;
     this.suffocationMin = suffocationMin;
-    next = new Material[xLen][yLen][zLen];
   }
 
   public static boolean live(Material m) { return m == LIVE; }
@@ -104,8 +108,25 @@ public class GameOfLife3D {
           final Block b = block(x, y, z);
           final Material now = b.getType();
           final Material soon = next[x][y][z];
-          if (now == soon) continue; // block did not change
-          b.setType(soon);
+          if (now != soon) b.setType(soon);
+        }
+      }
+    }
+  }
+
+  public void shuffle(final double saturation) {
+    for (int z=0; z<zLen; z++) {
+      for (int y=0; y<yLen; y++) {
+        for (int x=0; x<xLen; x++) {
+          final Block b = block(x, y, z);
+          final Material m = b.getType();
+
+          final boolean live = live(m);
+          final boolean dead = dead(m);
+          if (!live && !dead) continue; // this block is not part of the game
+
+          final Material rm = Math.random() < saturation ? LIVE : DEAD;
+          if (m != rm) b.setType(rm);
         }
       }
     }
