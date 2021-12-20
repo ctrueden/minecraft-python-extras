@@ -10,6 +10,6 @@ mcroot=$(cd "$dir/../.." && pwd)
 indir="$dir/java"
 builddir="$dir/build"
 mkdir -p "$builddir" &&
-javac -cp "$mcroot/spigot.jar" -d "$builddir" "$indir"/*.java &&
+javac -cp "$mcroot/bundler/libraries/*" -d "$builddir" "$indir"/*.java &&
 (cd "$builddir" && jar cf "$dir/mcx.jar" .)
 rm -rf "$builddir"
