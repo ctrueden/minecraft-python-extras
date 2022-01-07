@@ -1,4 +1,4 @@
-import collections, math
+import collections, math, types
 from random import random
 from mcapi import *
 from gol import GameOfLife
@@ -996,7 +996,8 @@ class Perspective:
         Draws an image from the given source, using materials from the
         given color table to approximate the color of each image pixel.
 
-        :param colortable: Dictionary mapping material types to color RGB triples.
+        :param colortable: A dict mapping material types to color RGB triples.
+                           Or a function from (x, y, a, r, g, b) to material.
         :param image: The image to draw.
         :param where: The image's center (default lookingat()).
         :param wstep: (X, Y, Z) tuple defining how each dimensional axis
@@ -1023,6 +1024,11 @@ class Perspective:
                     image = URL(image)
             image = ImageIO.read(image)
 
+        if isinstance(colortable, types.FunctionType):
+            which_material = colortable
+        else:
+            which_material = lambda x, y, a, r, g, b: _closest_material(colortable, r, g, b) if a >= 64 else None
+
         loc = self.location(where, looking=True)
 
         def coord(d, ix, iy):
@@ -1038,12 +1044,15 @@ class Perspective:
                 r = 0xff & (argb >> 16)
                 g = 0xff & (argb >> 8)
                 b = 0xff & argb
-                if a < 64:
+
+                block_material = which_material(x=ix, y=iy, a=a, r=r, g=g, b=b)
+                if block_material is None:
                     continue
+
                 x = int(loc.x + coord(0, ix - cix, iy - ciy))
                 y = int(loc.y + coord(1, ix - cix, iy - ciy))
                 z = int(loc.z + coord(2, ix - cix, iy - ciy))
-                block_material = _closest_material(colortable, r, g, b)
+
                 self.world().getBlockAt(x, y, z).type = block_material
 
     @synchronous()
