@@ -1056,6 +1056,50 @@ class Perspective:
                 self.world().getBlockAt(x, y, z).type = block_material
 
     @synchronous()
+    def volume(self, colortable, images, where=None):
+        """
+        Draws a stack of images by repeatedly calling the image function.
+
+        :param colortable: A dict mapping material types to color RGB triples.
+                           Or a function from (x, y, z, a, r, g, b) to material.
+        :param images: The stack of images to draw.
+        :param where: The center of the volume's top (default lookingat()).
+        :param wstep: (X, Y, Z) tuple defining how each dimensional axis
+                      moves along each image's X/width axis. The default
+                      is (1, 0, 0), which maps the image X axis to
+                      Minecraft's X axis in the positive direction.
+        :param hstep: (X, Y, Z) tuple defining how each dimensional axis
+                      moves along each image's Y/height axis. The default
+                      is (0, 0, 1), which maps the image Y axis to
+                      Minecraft's Z axis in the positive direction.
+        :param istep: (X, Y, Z) tuple defining how each dimensional axis
+                      changes with the image stack indices. The default
+                      is (0, -1, 0), which maps the image stack index to
+                      Minecraft's Y axis in the negative direction.
+        """
+        if type(images) == str:
+            # Read image planes from file path.
+            f = File(images)
+            iis = ImageIO.createImageInputStream(f)
+            reader = ImageIO.getImageReaders(iis).next()
+            reader.setInput(iis)
+            pageCount = reader.getNumImages(True)
+            images = []
+            for p in range(pageCount):
+                images.append(reader.read(p))
+            iis.close()
+
+        loc = self.location(where, looking=True)
+
+        for i in range(len(images)):
+            if type(colortable) == types.FunctionType:
+                colortable_i = lambda x, y, a, r, g, b: colortable(x=x, y=y, z=i, a=a, r=r, g=g, b=b)
+            else:
+                colortable_i = colortable
+            self.image(colortable_i, images[i], loc, wstep, hstep)
+            loc = self.location(loc.x + istep[0], loc.y + istep[1], loc.z + istep[2])
+
+    @synchronous()
     def _blocks(self, loc, xradius, yradius, zradius, block_function):
         irange = lambda a, b: range(int(math.floor(a)), int(math.floor(b + 1)))
         for x in irange(loc.x - xradius, loc.x + xradius):
