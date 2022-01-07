@@ -339,7 +339,8 @@ color_materials = {
         Material.PURPLE_CONCRETE_POWDER,
         Material.RED_CONCRETE_POWDER,
         Material.WHITE_CONCRETE_POWDER,
-        Material.YELLOW_CONCRETE_POWDER],
+        Material.YELLOW_CONCRETE_POWDER
+    ],
     'terracotta': [
         Material.BLACK_TERRACOTTA,
         Material.BLUE_TERRACOTTA,
