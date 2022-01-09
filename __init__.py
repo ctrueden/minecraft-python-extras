@@ -1,5 +1,5 @@
 import collections, math, types
-from random import random
+from random import random, choice
 from mcapi import *
 from gol import GameOfLife
 from golfast import golfast
@@ -1577,6 +1577,13 @@ class GameOfLifeUpdater(BukkitRunnable):
                 self.cancel()
         except Exception as e:
             print(e)
+
+############# MATERIAL PATTERNS ##############
+def fur(x, y, z, a, r, g, b):
+    """ For use with the image and volume functions. """
+    light_fur = ['brown_mushroom_block', 'dirt']
+    dark_fur = ['brown_wool', 'brown_terracotta', 'nether_bricks']
+    return materials(choice(dark_fur))[0] if a > 128 and r > 128 and g > 128 and b > 128 else None
 
 ################### IDEAS ####################
 
