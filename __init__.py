@@ -1,6 +1,7 @@
 import collections, math, types
 from random import random, choice
 from mcapi import *
+from bresenham import line
 from gol import GameOfLife
 from golfast import golfast
 from df_maze import Maze
@@ -989,6 +990,40 @@ class Perspective:
                 return innertype
             return None # outside the ellipsoid
         self._blocks(loc, xradius, yradius, zradius, blocktype_function)
+
+    @synchronous()
+    def wall(self, wherestart, whereend, blocktype=None):
+        """
+        Makes a vertical wall from one location to another.
+
+        More precisely: draws a straight line of blocks from one location
+        to another using Bresenham's line algorithm, drawing blocks downward
+        from each point of the line until reaching something solid.
+
+        :param wherestart: Starting position of the line.
+        :param whereend: Ending position of the line.
+        :param blocktype: The type of block to place along the line.
+        """
+        world = self.world()
+        if blocktype is None:
+            safe_blocktype = self.lookingat().type
+        else:
+            safe_blocktype = material(blocktype)
+        if safe_blocktype is None:
+            raise Exception('Unknown material type: ' + str(blocktype))
+            return
+
+        x1, y1, z1 = self.ipos(wherestart)
+        x2, y2, z2 = self.ipos(whereend)
+        pts = list(line(x1, z1, x2, z2))
+        for i, (x, z) in enumerate(pts):
+            y = (y2 - y1) * i / (len(pts) - 1) + y1
+            while y >= -64: # bound as of v1.18
+                block = world.getBlockAt(x, y, z)
+                if not airy(block):
+                    break
+                block.type = safe_blocktype
+                y -= 1
 
     @synchronous()
     def image(self, colortable, image, where=None, wstep=(1, 0, 0), hstep=(0, -1, 0)):
