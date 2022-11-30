@@ -521,28 +521,28 @@ class Perspective:
     def fx(self, where=None):
         """
         Gets a place's X coordinate as a float.
-        :param where Place whose X coordinate is needed (default current location).
+        :param where: Place whose X coordinate is needed (default current location).
         """
         return self.location(where).x
 
     def fy(self, where=None):
         """
         Gets a place's Y coordinate as a float.
-        :param where Place whose Y coordinate is needed (default current location).
+        :param where: Place whose Y coordinate is needed (default current location).
         """
         return self.location(where).y
 
     def fz(self, where=None):
         """
         Gets a place's Z coordinate as a float.
-        :param where Place whose Z coordinate is needed (default current location).
+        :param where: Place whose Z coordinate is needed (default current location).
         """
         return self.location(where).z
 
     def ix(self, where=None):
         """
         Gets a place's X coordinate as an integer.
-        :param where Place whose X coordinate is needed (default current location).
+        :param where: Place whose X coordinate is needed (default current location).
         """
         loc = self.location(where)
         return int(round(self.fx(loc)))
@@ -550,7 +550,7 @@ class Perspective:
     def iy(self, where=None):
         """
         Gets a place's Y coordinate as an integer.
-        :param loc Location to convert (default current location).
+        :param loc: Location to convert (default current location).
         """
         loc = self.location(where)
         return int(round(self.fy(loc)))
@@ -558,7 +558,7 @@ class Perspective:
     def iz(self, where=None):
         """
         Gets a place's Z coordinate as an integer.
-        :param loc Location to convert (default current location).
+        :param loc: Location to convert (default current location).
         """
         loc = self.location(where)
         return int(round(self.fz(loc)))
